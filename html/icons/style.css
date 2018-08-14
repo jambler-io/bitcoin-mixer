@@ -1,0 +1,74 @@
+@font-face {
+  font-family: 'icon';
+  src:  url('fonts/icon.eot?c8wlnm');
+  src:  url('fonts/icon.eot?c8wlnm#iefix') format('embedded-opentype'),
+    url('fonts/icon.ttf?c8wlnm') format('truetype'),
+    url('fonts/icon.woff?c8wlnm') format('woff'),
+    url('fonts/icon.svg?c8wlnm#icon') format('svg');
+  font-weight: normal;
+  font-style: normal;
+}
+
+.fa-github:before {
+  content: "\e914";
+}
+.fa-file-doc:before {
+  content: "\e90e";
+}
+.fa-file-html:before {
+  content: "\e90f";
+}
+.fa-file-pdf:before {
+  content: "\e910";
+}
+.fa-file-txt:before {
+  content: "\e911";
+}
+.fa-file-xls:before {
+  content: "\e912";
+}
+.fa-file-zip:before {
+  content: "\e913";
+}
+.fa-copy:before {
+  content: "\e90d";
+}
+.fa-error:before {
+  content: "\e90c";
+}
+.fa-help:before {
+  content: "\e90b";
+}
+.fa-exit:before {
+  content: "\e909";
+}
+.fa-top:before {
+  content: "\e90a";
+}
+.fa-top2:before {
+  content: "\e908";
+}
+.fa-asterisk:before {
+  content: "\e907";
+}
+.fa-key:before {
+  content: "\e906";
+}
+.fa-user:before {
+  content: "\e905";
+}
+.fa-menu:before {
+  content: "\e904";
+}
+.fa-bitcoin:before {
+  content: "\e900";
+}
+.fa-reddit:before {
+  content: "\e903";
+}
+.fa-email:before {
+  content: "\e901";
+}
+.fa-telegram:before {
+  content: "\e902";
+}
