@@ -1,17 +1,22 @@
 <?
 ///////////////////////////////////////////////////
 
-$partner_api_key = 'enter_you_api_key_from__jambler.io__account';
+$partner_api_key = '__your_jambler_api_key__';
 
 ///////////////////////////////////////////////////
 
 $apiUrl = 'https://api.jambler.io';
 $clearCDN = '';
 $darkCDN = '';
-$coin_ids = array('btc');
+$coin_ids = array(
+	'btc'
+);
 $version = 4;
 
 $dir = dirname($_SERVER['PHP_SELF']);
+if (substr($dir, -1) === '/') {
+	$dir = substr($dir, 0, -1);
+}
 
 $curl = curl_init();
 curl_setopt_array($curl, array(
@@ -51,11 +56,9 @@ if (isset($_GET['guarantee'])) {
 }
 
 $cdn = strrchr($_SERVER['HTTP_HOST'], '.') == '.onion' ? $darkCDN : $clearCDN;
-$is_onion = strrchr($_SERVER['HTTP_HOST'], '.') == '.onion';
 
 function addressValidator($address) {
-	global $is_onion;
-	$host = $is_onion ? 'http://localhost:8080' : ($_SERVER['HTTPS'] ? 'https': 'http').'://'.$_SERVER['HTTP_HOST'];
+	$host = strrchr($_SERVER['HTTP_HOST'], '.') == '.onion' ? 'http://localhost:8080' : ($_SERVER['HTTPS'] ? 'https': 'http').'://'.$_SERVER['HTTP_HOST'];
 	$curl = curl_init();
 	curl_setopt_array($curl, array(
 		CURLOPT_URL => $host.'/libs/bitcoin-address-validator.php?address='.$address,
@@ -386,7 +389,7 @@ if (isset($_GET['mix'])) {
 							</div>
 							<div class="d-flex align-items-center ml-3">PGP Open Key</div>
 						</a>
-						<a class="ml-3 d-none d-sm-inline" href="pgp-key.txt" download>B8A5 CFCA F63F F2D8 384A 6B12 D3B2 8095 6F0E 7CAF</a>
+						<a class="ml-3 d-none d-sm-inline" href=" https://jambler.io/pgp-key.txt" download>B8A5 CFCA F63F F2D8 384A 6B12 D3B2 8095 6F0E 7CAF</a>
 					</div>
 
 				</div>
@@ -577,7 +580,7 @@ if (isset($_GET['mix'])) {
 			<div class="order-3 col-12 col-xl-5 mt-5 mt-xl-0 text-center text-md-left">
 				<p class="text-14">Jambler.io PGP fingerprint:</p>
 				<p>
-					<a class="fingerprint" href="<?=$cdn?>/pgp-key.txt" download>B8A5 CFCA F63F F2D8 384A 6B12 D3B2 8095 6F0E 7CAF</a>
+					<a class="fingerprint" href=" https://jambler.io/pgp-key.txt" download>B8A5 CFCA F63F F2D8 384A 6B12 D3B2 8095 6F0E 7CAF</a>
 				</p>
 				<p class="mb-0 text-14">Follow the link to download a public key to verify the letters of guarantee provided by the platform.<br>* For more information on how it works, see <a href="<?=$dir?>/#faq"><b>FAQ</b></a>
 				</p>
