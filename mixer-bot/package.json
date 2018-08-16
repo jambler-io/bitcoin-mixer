@@ -1,0 +1,26 @@
+{
+  "name": "partner-bot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com:jambler-io/bitcoin-mixer.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "homepage": "https://github.com/jambler-io/bitcoin-mixer.git",
+  "dependencies": {
+    "is-json": "^2.0.1",
+    "node-cache": "^4.2.0",
+    "node-telegram-bot-api": "^0.30.0",
+    "qr-image": "^3.2.0",
+    "qrcode": "^1.2.0",
+    "request": "^2.87.0",
+    "request-promise": "^4.2.2",
+    "wallet-address-validator": "^0.1.7"
+  }
+}
