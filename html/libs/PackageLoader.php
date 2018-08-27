@@ -11,8 +11,8 @@ class PackageLoader
 	{
 		$this->dir = $dir;
 		$composer = $this->getComposerFile();
-		$this->loadPSR4($composer['autoload']['psr-4']);
-		$this->loadPSR0($composer['autoload']['psr-0']);
+		$this->loadPSR4(@$composer['autoload']['psr-4']);
+		$this->loadPSR0(@$composer['autoload']['psr-0']);
 	}
 	public function loadPSR4($namespaces)
 	{

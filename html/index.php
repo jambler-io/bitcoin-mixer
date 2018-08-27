@@ -3,6 +3,18 @@
 
 $partner_api_key = '__your_jambler_api_key__';
 
+$titles = array(
+	'index' => 'Main page — {mixer_name}',
+	'mix' => 'Second page — {mixer_name}',
+	'result' => 'First page — {mixer_name}'
+);
+
+$descriptions = array(
+	'index' => 'Main page description',
+	'mix' => 'Second page description',
+	'result' => 'First page description'
+);
+
 ///////////////////////////////////////////////////
 
 $apiUrl = 'https://api.jambler.io';
@@ -11,7 +23,15 @@ $darkCDN = '';
 $coin_ids = array(
 	'btc'
 );
-$version = 4;
+$version = 5;
+
+
+if (isset($_GET['guarantee'])) {
+	header('Content-type: text/plain');
+	header('Content-Disposition: attachment; filename="LetterGuarantee.txt"');
+	echo @$_REQUEST['text'];
+	exit();
+}
 
 $dir = dirname($_SERVER['PHP_SELF']);
 if (substr($dir, -1) === '/') {
@@ -39,7 +59,7 @@ if ($err) {
 	echo $err;
 	exit();
 }
-elseif ($info['error_message']) {
+elseif (!empty($info['error_message'])) {
 	echo $info['error_message'];
 	exit();
 }
@@ -48,17 +68,11 @@ $info['mixer_fix_fee'] = round($info['mixer_fix_fee'] / 100000000, 5);
 $info['min_amount'] = round($info['min_amount'] / 100000000, 5);
 $info['max_amount'] = round($info['max_amount'] / 100000000, 5);
 
-if (isset($_GET['guarantee'])) {
-	header('Content-type: text/plain');
-	header('Content-Disposition: attachment; filename="LetterGuarantee.txt"');
-	echo @$_REQUEST['text'];
-	exit();
-}
-
 $cdn = strrchr($_SERVER['HTTP_HOST'], '.') == '.onion' ? $darkCDN : $clearCDN;
 
 function addressValidator($address) {
-	$host = strrchr($_SERVER['HTTP_HOST'], '.') == '.onion' ? 'http://localhost:8080' : ($_SERVER['HTTPS'] ? 'https': 'http').'://'.$_SERVER['HTTP_HOST'];
+	$proto = !empty($_SERVER['HTTP_X_FORWARDED_PROTO']) ? $_SERVER['HTTP_X_FORWARDED_PROTO'] : (!empty($_SERVER['HTTPS']) ? 'https': 'http');
+	$host = strrchr($_SERVER['HTTP_HOST'], '.') == '.onion' ? 'http://localhost:8080' : $proto.'://'.$_SERVER['HTTP_HOST'];
 	$curl = curl_init();
 	curl_setopt_array($curl, array(
 		CURLOPT_URL => $host.'/libs/bitcoin-address-validator.php?address='.$address,
@@ -94,7 +108,7 @@ if (isset($_GET['mix'])) {
 			elseif ($res != '1') {
 				$ERR['forward_addr'] = 'Wrong format of BTC Address';
 			}
-			if ($_REQUEST['forward_addr2']) {
+			if (!empty($_REQUEST['forward_addr2'])) {
 				list($res, $err) = addressValidator($_REQUEST['forward_addr2']);
 				if ($err) {
 					$ERR['forward_addr2'] = $err;
@@ -129,7 +143,7 @@ if (isset($_GET['mix'])) {
 			if ($err) {
 				$ERR['curl'] = $err;
 			}
-			elseif ($res['error_message']) {
+			elseif (!empty($res['error_message'])) {
 				$ERR['curl'] = $res['error_message'];
 			}
 			else {
@@ -146,17 +160,27 @@ if (isset($_GET['mix'])) {
 	}
 
 	if ($p == 'result') {
-		$you_send = $_REQUEST['you_send'] ? $_REQUEST['you_send'] : 1;
+		$you_send = !empty($_REQUEST['you_send']) ? $_REQUEST['you_send'] : 1;
 		$you_receive = $you_send - $you_send * $info['mixer_fee_pct'] / 100 - $info['mixer_fix_fee'];
 	}
 
 }
+
+foreach ($titles as $_p => $v) {
+	$titles[$_p] = str_replace('{mixer_name}', $info['mixer_name'], $v);
+}
+$title = $titles[$p];
+foreach ($descriptions as $_p => $v) {
+	$descriptions[$_p] = str_replace('{mixer_name}', $info['mixer_name'], $v);
+}
+$description = $descriptions[$p];
 ?>
 
 <!doctype html>
 <html lang="en">
 <head>
-	<title><?=$info['mixer_name']?></title>
+	<title><?=@$title?></title>
+	<meta name="description" content="<?=@$description?>" />
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 	<!--[if IE]><link rel="shortcut icon" href="<?=$cdn?>/images/favicon.ico"><![endif]-->
