@@ -1,8 +1,14 @@
 #!/bin/bash
 
-# Jambler.io partner mixer installation script. v 1.0
-# Include Jambler partner template (tor, clearnet). Partner telegram bot. Services
-# you need clear Debian 9 VPS
+# Jambler.io partner mixer installation script. v 1.1
+# Applied for clear Debian 9 VPS.
+#
+#  The script:
+#   - downloads and configures required packages
+#   - installs and confingures Partner Mixer website based on a Jambler Partner Website template
+#   - installs and configures TOR mirror for Mixer website
+#   - installs and configures Telegram Bot hosting based on Jambler Partner Bot template
+#   - starts all services
 
 
 if ! test `id -u` -eq 0 ; then
@@ -10,9 +16,9 @@ if ! test `id -u` -eq 0 ; then
    exit 1
 fi
 
-# You clearnet sitename
-CLEARNET_SITE_SERVERNAME=""
-    echo -n "Enter you mixer domain name. Exanple: mymixer.com: "
+# get clearnet sitename
+	CLEARNET_SITE_SERVERNAME=""
+    echo -n "Enter your mixer domain name. Example: mymixer.com: "
     read CLEARNET_SITE_SERVERNAME
 
 # install git
@@ -26,12 +32,12 @@ fi
     PKG_DIRECTORY="/tmp/distribution"
     git clone ${GIT_ADDRESS} ${PKG_DIRECTORY}
 
-# General site parmeters
-SITE_SOURCE="${PKG_DIRECTORY}/html"
-SITE_DIRECTORY="/var/www/html"
-TOR_SITE_SERVERNAME_FILE="/var/lib/tor/hidden-services/hostname"
+# general site parmeters
+	SITE_SOURCE="${PKG_DIRECTORY}/html"
+	SITE_DIRECTORY="/var/www/html"
+	TOR_SITE_SERVERNAME_FILE="/var/lib/tor/hidden-services/hostname"
 
-    # install TOR
+# install TOR
     if test `cat /etc/apt/sources.list|grep torproject|wc -l` -eq 0 ; then
         echo "deb https://deb.torproject.org/torproject.org stretch main" >> /etc/apt/sources.list
         echo "deb-src https://deb.torproject.org/torproject.org stretch main" >> /etc/apt/sources.list
@@ -49,30 +55,31 @@ TOR_SITE_SERVERNAME_FILE="/var/lib/tor/hidden-services/hostname"
     fi
 
 
-    #create TOR hidden services directory and copy hostname and private_key files
+#create TOR hidden services directory and copy hostname + private_key files
     mkdir -p /var/lib/tor/hidden-services
 
     if test `cat /etc/tor/torrc|grep "^HiddenServicePort 80 127.0.0.1:8080"|wc -l` -eq 0 ; then
         echo "HiddenServiceDir /var/lib/tor/hidden-services" >> /etc/tor/torrc
         echo "HiddenServicePort 80 127.0.0.1:8080" >> /etc/tor/torrc
     fi
-    # set valid owner and modes for tor files and make symlink
+
+# set valid permissions and make symlink
     chown -R debian-tor:debian-tor /var/lib/tor/hidden-services
     chmod -R 600 /var/lib/tor/hidden-services
     chmod 700 /var/lib/tor/hidden-services
     chmod g+s /var/lib/tor/hidden-services
-#    ln -s /var/lib/tor/hidden/services ${TOR_HS_DIRECTORY}
+# ???   ln -s /var/lib/tor/hidden/services ${TOR_HS_DIRECTORY}
 
 # enable and start tor
-systemctl enable tor
-systemctl restart tor
+	systemctl enable tor
+	systemctl restart tor
 
 # General variables for clearweb site
-CLEARNET_SITE_KEY_FILE="${PKG_DIRECTORY}/ssl/site.key"                     # clearweb private key file
-CLEARNET_SITE_CRT_FILE="${PKG_DIRECTORY}/ssl/site.pem"                     # clearweb certificate file
-CLEARNET_SITE_SSL_DIRECTORY="/etc/nginx/ssl"    # clearweb nginx ssl directory
-TELEGRAM_BOT_SOURCE="${PKG_DIRECTORY}/mixer-bot"
-TELEGRAM_BOT_DIRECTORY="/var/mixer-bot"  # telegram
+CLEARNET_SITE_KEY_FILE="${PKG_DIRECTORY}/ssl/site.key"     # clearweb private key file
+CLEARNET_SITE_CRT_FILE="${PKG_DIRECTORY}/ssl/site.pem"     # clearweb certificate file
+CLEARNET_SITE_SSL_DIRECTORY="/etc/nginx/ssl"    		   # clearweb nginx ssl directory
+TELEGRAM_BOT_SOURCE="${PKG_DIRECTORY}/mixer-bot"           #
+TELEGRAM_BOT_DIRECTORY="/var/mixer-bot"  				   # telegram
 
 
 # install nginx
@@ -80,6 +87,7 @@ if test `cat /etc/apt/sources.list|grep nginx|wc -l` -eq 0 ; then
    echo "deb http://nginx.org/packages/debian/ stretch nginx" >> /etc/apt/sources.list
    echo "deb-src http://nginx.org/packages/debian/ stretch nginx" >> /etc/apt/sources.list
 fi
+
 if test `which nginx|wc -l` -eq 0 ; then
     apt-get update
     apt-get -y --allow-unauthenticated install nginx
@@ -113,7 +121,6 @@ chown -R www-data:www-data ${SITE_DIRECTORY}
 chown -R www-data:www-data ${CLEARNET_SITE_SSL_DIRECTORY}
 sed -i 's/user  nginx/user  www-data/' /etc/nginx/nginx.conf
 TOR_SITE_SERVERNAME=`cat ${TOR_SITE_SERVERNAME_FILE}`
-
 
 # Create cache directory for nginx
 mkdir -p /opt/nginx/cache
@@ -192,9 +199,7 @@ directory = ${TELEGRAM_BOT_DIRECTORY}
 user = root" > /etc/supervisor/conf.d/jambler_tbot.conf
 
 
-
 # enable all services
-
 systemctl enable fail2ban
 systemctl enable php7.0-fpm
 systemctl enable nginx
