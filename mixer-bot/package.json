@@ -4,11 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "with_logs": "node index.js > error.log"
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com:jambler-io/bitcoin-mixer.git"
+    "url": "git+ssh://github.com/jambler-io/bitcoin-mixer.git"
   },
   "author": "",
   "license": "ISC",

@@ -17,14 +17,14 @@ const handlePlainText = async (userId, text) => {
         await cache.setAsync(`USER:${userId}`, user);
         await bot.sendMessage(userId, Messages.ENTER_SECOND_BTC_WALLET, { parse_mode: PARSE_MODE, reply_markup: {  resize_keyboard: true, keyboard: Markups.MIXING} })
       } else {
-        await bot.sendMessage(userId, Messages.NOT_VALID_ADRESS, { parse_mode: PARSE_MODE, reply_markup: {  resize_keyboard: true, keyboard: Markups.STANDARD} });
+        await bot.sendMessage(userId, Messages.NOT_VALID_ADDRESS, { parse_mode: PARSE_MODE, reply_markup: {  resize_keyboard: true, keyboard: Markups.STANDARD} });
       }
     } else if (user.secondeWallet == null) {
       if (validateWallet(text)) {
         user.secondeWallet = text;
         await onMixing(userId, user.firstWallet, user.secondeWallet);
       } else {
-        await bot.sendMessage(userId, Messages.NOT_VALID_ADRESS, { parse_mode: PARSE_MODE, reply_markup: {  resize_keyboard: true, keyboard: Markups.MIXING} });
+        await bot.sendMessage(userId, Messages.NOT_VALID_ADDRESS, { parse_mode: PARSE_MODE, reply_markup: {  resize_keyboard: true, keyboard: Markups.MIXING} });
       }
     }
   }

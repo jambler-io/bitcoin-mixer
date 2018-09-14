@@ -12,7 +12,7 @@ const setVariables = (json) => {
 }
 const bootstrap = async () => {
     try {
-        const result = await request.get(`${BACKEND_URL}/partners/info/${COIN_ID}`, {
+        const result = await request.get(`${BACKEND_URL}/rest/partners/info/${COIN_ID}`, {
             headers: {
                 'xkey': PARTNER_API_TOKEN
             }
