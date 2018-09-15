@@ -1,7 +1,7 @@
-<?
+<?php
 ///////////////////////////////////////////////////
 
-$partner_api_key = '__your_jambler_api_key__';
+$YOUR_JAMBLER_API_KEY = '__YOUR_JAMBLER_API_KEY__';
 
 $titles = array(
 	'index' => 'Main page — {mixer_name}',
@@ -49,7 +49,7 @@ curl_setopt_array($curl, array(
 	CURLOPT_HTTPHEADER => array(
 		'Cache-Control: no-cache',
 		'Content-Type: application/json',
-		'xkey: '.$partner_api_key
+		'xkey: '.$YOUR_JAMBLER_API_KEY
 	)
 ));
 $info = json_decode(curl_exec($curl), true);
@@ -70,7 +70,71 @@ $info['max_amount'] = round($info['max_amount'] / 100000000, 5);
 
 $cdn = strrchr($_SERVER['HTTP_HOST'], '.') == '.onion' ? $darkCDN : $clearCDN;
 
+function newSecurityCode() {
+	$exit = '<?php exit("Restricted area");?>';
+	$ut = date('U');
+	$code = md5(password_hash($ut, PASSWORD_DEFAULT));
+	file_put_contents('codes.php', $exit."\t".$ut."\t".$code."\n", FILE_APPEND | LOCK_EX);
+	return $code;
+}
+
+function securityCodeValidator() {
+	if (empty($_REQUEST['code'])) {
+		return false;
+	}
+	$file = @file('codes.php');
+	if (empty($file)) {
+		return true;
+	}
+	$row = current(preg_grep('/'.@$_REQUEST['code'].'/', $file));
+	if (empty($row)) {
+		return false;
+	}
+	$row_num = array_search($row, $file);
+	list($_, $ut) = explode("\t", $row);
+	unset($file[$row_num]);
+	file_put_contents('codes.php', implode('', $file), LOCK_EX);
+	if ((date('U') - $ut) < 3) {
+		return false;
+	}
+	return true;
+}
+
 function addressValidator($address) {
+	global $YOUR_JAMBLER_API_KEY;
+	$exit = '<?php exit("Restricted area");?>';
+	$file = @file('addresses.php');
+	if (empty($file)) {
+		$file = array();
+	}
+	$hash = md5($YOUR_JAMBLER_API_KEY.substr($addr, 6, -6));
+	$row = current(preg_grep('/'.$hash.'/', $file));
+	if (empty($row)) {
+		$file[] = $exit."\t".date('U')."\t".$hash."\t1\n";
+		file_put_contents('addresses.php', implode('', $file), LOCK_EX);
+	}
+	else {
+		$row_num = array_search($row, $file);
+		list($_, $ut, $hash, $count) = explode("\t", $row);
+		if ($count >= 5) {
+			if ((date('U') - $ut) >= 60 * 60 * 24) {
+				unset($file[$row_num]);
+				file_put_contents('addresses.php', implode('', $file), LOCK_EX);
+			}
+			else {
+				return array(null, 'Blocked address');
+			}
+		}
+		else {
+			if ((date('U') - $ut) >= 20) {
+				unset($file[$row_num]);
+			}
+			else {
+				$file[$row_num] = $exit."\t".$ut."\t".$hash."\t".($count + 1)."\n";
+			}
+			file_put_contents('addresses.php', implode('', $file), LOCK_EX);
+		}
+	}
 	$proto = !empty($_SERVER['HTTP_X_FORWARDED_PROTO']) ? $_SERVER['HTTP_X_FORWARDED_PROTO'] : (!empty($_SERVER['HTTPS']) ? 'https': 'http');
 	$host = strrchr($_SERVER['HTTP_HOST'], '.') == '.onion' ? 'http://localhost:8080' : $proto.'://'.$_SERVER['HTTP_HOST'];
 	$curl = curl_init();
@@ -99,6 +163,9 @@ if (isset($_GET['mix'])) {
 		$ERR = array();
 		if (empty($_REQUEST['forward_addr'])) {
 			$ERR['forward_addr'] = 'This field is required';
+		}
+		elseif (!securityCodeValidator()) {
+			$ERR['forward_addr'] = 'Wait 2 seconds before submit';
 		}
 		else {
 			list($res, $err) = addressValidator($_REQUEST['forward_addr']);
@@ -130,7 +197,7 @@ if (isset($_GET['mix'])) {
 				CURLOPT_HTTPHEADER => array(
 					'Cache-Control: no-cache',
 					'Content-Type: application/json',
-					'xkey: '.$partner_api_key
+					'xkey: '.$YOUR_JAMBLER_API_KEY
 				),
 				CURLOPT_POSTFIELDS => json_encode(array(
 					'forward_addr' => $_REQUEST['forward_addr'],
@@ -179,28 +246,28 @@ $description = $descriptions[$p];
 <!doctype html>
 <html lang="en">
 <head>
-	<title><?=@$title?></title>
-	<meta name="description" content="<?=@$description?>" />
+	<title><?php echo @$title?></title>
+	<meta name="description" content="<?php echo @$description?>" />
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-	<!--[if IE]><link rel="shortcut icon" href="<?=$cdn?>/images/favicon.ico"><![endif]-->
-	<link rel="apple-touch-icon-precomposed" href="<?=$cdn?>/images/apple-touch-icon-precomposed.png">
-	<link rel="icon" href="<?=$cdn?>/images/favicon.png">
-	<link rel="stylesheet" href="<?=$cdn?>/bootstrap/bootstrap.min.css?v=<?=$version?>">
-	<link rel="stylesheet" href="<?=$cdn?>/icons/fa.css?v=<?=$version?>">
-	<link rel="stylesheet" href="<?=$cdn?>/icons/style.css?v=<?=$version?>">
-	<link rel="stylesheet" href="<?=$cdn?>/fonts/style.css?v=<?=$version?>">
-	<link rel="stylesheet" href="<?=$cdn?>/style.tpl.css?v=<?=$version?>">
-	<link rel="stylesheet" href="<?=$cdn?>/libs/toastr.min.css?v=<?=$version?>">
-	<script src="<?=$cdn?>/libs/jquery-3.3.1.min.js"></script>
-	<script src="<?=$cdn?>/libs/toastr.min.js"></script>
-	<script src="<?=$cdn?>/libs/helpers.js"></script>
+	<!--[if IE]><link rel="shortcut icon" href="<?php echo $cdn?>/images/favicon.ico"><![endif]-->
+	<link rel="apple-touch-icon-precomposed" href="<?php echo $cdn?>/images/apple-touch-icon-precomposed.png">
+	<link rel="icon" href="<?php echo $cdn?>/images/favicon.png">
+	<link rel="stylesheet" href="<?php echo $cdn?>/bootstrap/bootstrap.min.css?v=<?php echo $version?>">
+	<link rel="stylesheet" href="<?php echo $cdn?>/icons/fa.css?v=<?php echo $version?>">
+	<link rel="stylesheet" href="<?php echo $cdn?>/icons/style.css?v=<?php echo $version?>">
+	<link rel="stylesheet" href="<?php echo $cdn?>/fonts/style.css?v=<?php echo $version?>">
+	<link rel="stylesheet" href="<?php echo $cdn?>/style.tpl.css?v=<?php echo $version?>">
+	<link rel="stylesheet" href="<?php echo $cdn?>/libs/toastr.min.css?v=<?php echo $version?>">
+	<script src="<?php echo $cdn?>/libs/jquery-3.3.1.min.js"></script>
+	<script src="<?php echo $cdn?>/libs/toastr.min.js"></script>
+	<script src="<?php echo $cdn?>/libs/helpers.js"></script>
 	<script>
 	$(document).ready(function() {
 		$('#calculate_btn').hide();
 		$('input[name=you_send]').on('keyup mouseup', e => {
-			var mixer_fee_pct = <?=$info['mixer_fee_pct']?>;
-			var mixer_fix_fee = <?=$info['mixer_fix_fee']?>;
+			var mixer_fee_pct = <?php echo $info['mixer_fee_pct']?>;
+			var mixer_fix_fee = <?php echo $info['mixer_fix_fee']?>;
 			var you_send = $(e.target).val();
 			$('#you_receive').text(Math.round((you_send - you_send * mixer_fee_pct /100 - mixer_fix_fee) * 100000) / 100000);
 		});
@@ -210,33 +277,33 @@ $description = $descriptions[$p];
 
 <body>
 
-	<header class="<?=$p?>">
+	<header class="<?php echo $p?>">
 		<div class="container">
 			<nav class="text-center">
-				<a href="<?=$dir?>/" class="logo" title="To main page"><?=$info['mixer_name']?></a>
+				<a href="<?php echo $dir?>/" class="logo" title="To main page"><?php echo $info['mixer_name']?></a>
 				<div class="menu border-top-light nowrap pt-4 d-flex justify-content-between d-sm-block">
-					<a class="m-0 mr-sm-2 mr-xl-4" href="<?=$dir?>/#how">How Does It Work?</a>
-					<a class="m-0 ml-sm-2 mr-sm-2 ml-xl-4 mr-xl-4" href="<?=$dir?>/#benefits">Benefits</a>
-					<a class="m-0 ml-sm-2 mr-sm-2 ml-xl-4 mr-xl-4" href="<?=$dir?>/#faq">FAQ</a>
-					<a class="m-0 ml-sm-2 ml-xl-4" href="<?=$dir?>/#contacts">Contacts</a>
+					<a class="m-0 mr-sm-2 mr-xl-4" href="<?php echo $dir?>/#how">How Does It Work?</a>
+					<a class="m-0 ml-sm-2 mr-sm-2 ml-xl-4 mr-xl-4" href="<?php echo $dir?>/#benefits">Benefits</a>
+					<a class="m-0 ml-sm-2 mr-sm-2 ml-xl-4 mr-xl-4" href="<?php echo $dir?>/#faq">FAQ</a>
+					<a class="m-0 ml-sm-2 ml-xl-4" href="<?php echo $dir?>/#contacts">Contacts</a>
 				</div>
 			</nav>
-			<?
+			<?php
 			if ($p == 'index') {
 				?>
 				<div class="text-center">
 					<h1>Bitcoin Mixer&nbsp;2.0</h1>
 					<p class="big">Get cleanest coins from European, Asian and North American cryptocurrency stock exchanges</p>
-					<a href="<?=$dir?>/?mix" class="btn btn-jam btn-jam-xl">Start Bitcoin Anonymization</a>
+					<a href="<?php echo $dir?>/?mix" class="btn btn-jam btn-jam-xl">Start Bitcoin Anonymization</a>
 				</div>
-				<?
+				<?php
 			}
 			?>
 		</div>
 	</header>
 
 	<main>
-		<?
+		<?php
 		if ($p == 'index') {
 			?>
 			<section>
@@ -245,7 +312,7 @@ $description = $descriptions[$p];
 					<h2 class="h1 text-center">How Does It Work?</h2>
 					<div class="row">
 						<div class="col-12 text-center">
-							<img class="mt-4 mb-4 scheme" src="<?=$cdn?>/images/scheme.tpl.png">
+							<img class="mt-4 mb-4 scheme" src="<?php echo $cdn?>/images/scheme.tpl.png">
 							<p class="text-20">Bitcoin is pseudo anonymous, all transactions are written in blockchain. Any person can obtain an access to the history of money transfers from one address to another one. Our service provides you with an opportunity to protect your anonymity.</p>
 							<p class="text-20">We apply an innovative algorithm, Bitcoin Mixer 2.0, to uplevel anonymity and money mixing in comparison with classic mixers. The main advantage of our service is that all the funds returned to you after a mixing procedure are verified coins from cryptocurrency stock exchanges having an undoubtedly positive history.</p>
 							<p class="text-20">An additional point is that you receive all your money in various parts at random time intervals and to the different addresses. It is probably the best anonymization algorithm as of today.</p>
@@ -308,12 +375,12 @@ $description = $descriptions[$p];
 
 					<div class="mb-4">
 						<h5>5. What is a minimum amount of funds for cleansing?</h5>
-						<p><?=$info['min_amount']?> BTC</p>
+						<p><?php echo $info['min_amount']?> BTC</p>
 					</div>
 
 					<div class="mb-4">
 						<h5>6. What is a maximum amount of funds for cleansing?</h5>
-						<p><?=$info['max_amount']?> BTC per one request. This limitation is forced, since a large volume per one transaction is easier to deanonymize using blockchain volume analysis method. The mixer allows to create several requests for cleansing.</p>
+						<p><?php echo $info['max_amount']?> BTC per one request. This limitation is forced, since a large volume per one transaction is easier to deanonymize using blockchain volume analysis method. The mixer allows to create several requests for cleansing.</p>
 					</div>
 
 					<div class="mb-4">
@@ -323,7 +390,7 @@ $description = $descriptions[$p];
 
 					<div class="mb-4">
 						<h5>8. How much does it cost?</h5>
-						<p>A commission fee is dynamic and comes up to <?=$info['mixer_fee_pct']?>% + <?=$info['mixer_fix_fee']?> BTC which is a good offer for such anonymization level.</p>
+						<p>A commission fee is dynamic and comes up to <?php echo $info['mixer_fee_pct']?>% + <?php echo $info['mixer_fix_fee']?> BTC which is a good offer for such anonymization level.</p>
 					</div>
 
 					<div class="mb-4">
@@ -333,12 +400,12 @@ $description = $descriptions[$p];
 
 					<div class="mb-4">
 						<h5>10. What is a letter of guarantee?</h5>
-						<p>When we provide you with a Bitcoin address, to which you may send your coins to be mixed, we provide a digitally signed confirmation that this address has truly been generated by our server. For your peace of mind we always provide you with such letter and sign it with a PGP signature. You may verify our digital sign using our <a class="underline" href="<?=$cdn?>/pgp-key.txt" download>public key</a>. The Letter of Guarantee is the only proof of our obligations. Please always save the Letter of Guarantee before you send your coins to us.</p>
+						<p>When we provide you with a Bitcoin address, to which you may send your coins to be mixed, we provide a digitally signed confirmation that this address has truly been generated by our server. For your peace of mind we always provide you with such letter and sign it with a PGP signature. You may verify our digital sign using our <a class="underline" href="<?php echo $cdn?>/pgp-key.txt" download>public key</a>. The Letter of Guarantee is the only proof of our obligations. Please always save the Letter of Guarantee before you send your coins to us.</p>
 					</div>
 
 					<div class="mb-4">
 						<h5>11. How can I check a letter of guarantee?</h5>
-						<p>To check a letter of guarantee, install a PGP client (for example, <a class="underline" href="https://www.gpg4win.org/download.html" target="_blank">PGP4Win</a>), import a <a class="underline" href="<?=$cdn?>/pgp-key.txt" download>public key</a> from the website to the installed client and verify a letter of guarantee.</p>
+						<p>To check a letter of guarantee, install a PGP client (for example, <a class="underline" href="https://www.gpg4win.org/download.html" target="_blank">PGP4Win</a>), import a <a class="underline" href="<?php echo $cdn?>/pgp-key.txt" download>public key</a> from the website to the installed client and verify a letter of guarantee.</p>
 					</div>
 
 					<div class="mb-4">
@@ -418,7 +485,7 @@ $description = $descriptions[$p];
 
 				</div>
 			</section>
-			<?
+			<?php
 		}
 		elseif ($p == 'mix') {
 			?>
@@ -432,16 +499,17 @@ $description = $descriptions[$p];
 					<div class="row mt-3">
 						<div class="m-auto col-12 col-sm-9 col-md-7 col-lg-5 col-xl-4 d-inline-block text-center">
 							<div class="color-red text-left">
-								<?=@$ERR['curl']?>
+								<?php echo @$ERR['curl']?>
 							</div>
 							<form method="POST">
-								<input type="text" class="form-control" name="forward_addr" value="<?=@$_REQUEST['forward_addr']?>" placeholder="Enter first address (mandatory)" required>
+								<input type="hidden" name="code" value="<?php echo newSecurityCode()?>">
+								<input type="text" class="form-control" name="forward_addr" value="<?php echo @$_REQUEST['forward_addr']?>" placeholder="Enter first address (mandatory)" required>
 								<div class="color-red text-left">
-									<?=@$ERR['forward_addr']?>
+									<?php echo @$ERR['forward_addr']?>
 								</div>
-								<input type="text" class="form-control mt-2" name="forward_addr2" value="<?=@$_REQUEST['forward_addr2']?>" placeholder="Enter second address (optional)">
+								<input type="text" class="form-control mt-2" name="forward_addr2" value="<?php echo @$_REQUEST['forward_addr2']?>" placeholder="Enter second address (optional)">
 								<div class="color-red text-left">
-									<?=@$ERR['forward_addr2']?>
+									<?php echo @$ERR['forward_addr2']?>
 								</div>
 								<div class="row mt-4">
 									<div class="col-12">
@@ -454,16 +522,16 @@ $description = $descriptions[$p];
 					<div class="text-center mt-5">
 						<p>Your money will be returned in different parts to addresses specified above</p>
 						<p>
-							Time of return will be <?=$info['withdraw_max_timeout']?> hours
+							Time of return will be <?php echo $info['withdraw_max_timeout']?> hours
 							<span class="ml-2 mr-2">|</span>
-							Service fee: <?=$info['mixer_fee_pct']?>% + <?=$info['mixer_fix_fee']?> BTC
+							Service fee: <?php echo $info['mixer_fee_pct']?>% + <?php echo $info['mixer_fix_fee']?> BTC
 							<span class="ml-2 mr-2">|</span>
-							A generated address is valid for <?=$info['order_lifetime']?> days (See <a href="<?=$dir?>/#faq">FAQ</a>)
+							A generated address is valid for <?php echo $info['order_lifetime']?> days (See <a href="<?php echo $dir?>/#faq">FAQ</a>)
 						</p>
 					</div>
 				</div>
 			</section>
-			<?
+			<?php
 		}
 		elseif ($p == 'result') {
 			?>
@@ -471,19 +539,19 @@ $description = $descriptions[$p];
 				<div class="container">
 					<div class="text-center">
 						<h1>Bitcoin Mixer&nbsp;2.0</h1>
-						<form class="mt-4" action="<?=$dir?>/?guarantee" method="POST">
-							<input type="hidden" name="text" value="<?=$res['guarantee']?>">
+						<form class="mt-4" action="<?php echo $dir?>/?guarantee" method="POST">
+							<input type="hidden" name="text" value="<?php echo $res['guarantee']?>">
 							<button type="submit" class="d-inline a underline btn btn-link text-30">Download Letter of Guarantee</button>
 						</form>
-						<p class="mt-4">Please send your bitcoins (min <?=$info['min_amount']?>, max <?=$info['max_amount']?> BTC) to</p>
+						<p class="mt-4">Please send your bitcoins (min <?php echo $info['min_amount']?>, max <?php echo $info['max_amount']?> BTC) to</p>
 						<div class="btn-jam pl-5 pr-5" style="position: relative; height: auto">
-							<i class="fa fa-copy d-none pointer" style="position: absolute; right: 5px; top: 5px;" data-text="<?=$res['address']?>" title="Copy to clipboard"></i>
+							<i class="fa fa-copy d-none pointer" style="position: absolute; right: 5px; top: 5px;" data-text="<?php echo $res['address']?>" title="Copy to clipboard"></i>
 							<span class="break-word">
-							<?=$res['address']?>
+							<?php echo $res['address']?>
 							</span>
 						</div>
 						<div class="mt-3 text-center">
-							<img src="<?=$cdn?>/libs/qrcode.php?text=bitcoin:<?=$res['address']?>">
+							<img src="<?php echo $cdn?>/libs/qrcode.php?text=bitcoin:<?php echo $res['address']?>">
 							<div id="loader" class="d-none">
 								<div id="block-1" class="loader-block"></div>
 								<div id="block-2" class="loader-block"></div>
@@ -498,7 +566,7 @@ $description = $descriptions[$p];
 								$(document).ready(function() {
 									$('#loader').removeClass('d-none');
 									var req = function() {
-										$.get('<?=$cdn?>/libs/blockchain-info.php?address=<?=$res['address']?>').done(resp => {
+										$.get('<?php echo $cdn?>/libs/blockchain-info.php?address=<?php echo $res['address']?>').done(resp => {
 											resp = JSON.parse(resp);
 											if (resp.err) {
 												$('#blockchain_error').text(resp.err);
@@ -522,7 +590,7 @@ $description = $descriptions[$p];
 							</script>
 						</div>
 						<div class="mt-4 text-center">
-							<a href="<?=$dir?>/?mix" class="btn btn-jam btn-jam-white">Mix More Coins</a>
+							<a href="<?php echo $dir?>/?mix" class="btn btn-jam btn-jam-white">Mix More Coins</a>
 						</div>
 					</div>
 
@@ -530,15 +598,15 @@ $description = $descriptions[$p];
 						<a name="calculator"></a>
 						<h2 class="text-center">Exact Value & Fee Calculator</h2>
 
-						<form class="mt-4" action="<?=$dir?>/#calculator" method="POST">
-							<input type="hidden" name="guarantee" value="<?=$res['guarantee']?>">
-							<input type="hidden" name="address" value="<?=$res['address']?>">
+						<form class="mt-4" action="<?php echo $dir?>/#calculator" method="POST">
+							<input type="hidden" name="guarantee" value="<?php echo $res['guarantee']?>">
+							<input type="hidden" name="address" value="<?php echo $res['address']?>">
 
 							<div class="form-group row">
 								<label class="col-2 col-form-label text-right">You send:</label>
 								<div class="col-3">
 									<div class="input-group">
-										<input type="number" class="form-control text-right" name="you_send" value="<?=$you_send?>" min="<?=$info['min_amount']?>" max="<?=$info['max_amount']?>" step=".001" required>
+										<input type="number" class="form-control text-right" name="you_send" value="<?php echo $you_send?>" min="<?php echo $info['min_amount']?>" max="<?php echo $info['max_amount']?>" step=".001" required>
 										<div class="input-group-append">
 											<span class="input-group-text">BTC</span>
 										</div>
@@ -550,9 +618,9 @@ $description = $descriptions[$p];
 							<div class="form-group row">
 								<label class="col-2 col-form-label text-right">You receive:</label>
 								<div class="col-3 col-form-label text-right">
-									<b id="you_receive"><?=$you_receive?></b> BTC
+									<b id="you_receive"><?php echo $you_receive?></b> BTC
 								</div>
-								<p class="col-7 text-14">Your commission is not more than <?=$info['mixer_fee_pct']?>% and <?=$info['mixer_fix_fee']?> BTC – the BTC value is calculated, the commission value is taken from a letter of guarantee</p>
+								<p class="col-7 text-14">Your commission is not more than <?php echo $info['mixer_fee_pct']?>% and <?php echo $info['mixer_fix_fee']?> BTC – the BTC value is calculated, the commission value is taken from a letter of guarantee</p>
 							</div>
 
 
@@ -564,7 +632,7 @@ $description = $descriptions[$p];
 
 					</div>
 			</section>
-			<?
+			<?php
 		}
 		?>
 	</main>
@@ -574,7 +642,7 @@ $description = $descriptions[$p];
 	<div class="container">
 		<div class="row d-flex flex-wrap">
 			<div class="order-0 col-12 text-center text-md-left border-bottom-light mb-3">
-				<a href="<?=$dir?>/" class="logo" title="To main page"><?=$info['mixer_name']?></a>
+				<a href="<?php echo $dir?>/" class="logo" title="To main page"><?php echo $info['mixer_name']?></a>
 			</div>
 			<div class="order-2 order-md-1 col-12 col-md-6 col-xl-4 d-flex flex-column justify-content-between">
 				<div class="d-none d-md-block">
@@ -596,17 +664,17 @@ $description = $descriptions[$p];
 				</div>
 			</div>
 			<div class="order-1 order-md-2 col-12 col-md-6 col-xl-3 d-flex flex-row flex-md-column justify-content-between menu">
-				<a href="<?=$dir?>/#how">How Does It Work?</a>
-				<a href="<?=$dir?>/#benefits">Benefits</a>
-				<a href="<?=$dir?>/#faq">FAQ</a>
-				<a href="<?=$dir?>/#contacts">Contacts</a>
+				<a href="<?php echo $dir?>/#how">How Does It Work?</a>
+				<a href="<?php echo $dir?>/#benefits">Benefits</a>
+				<a href="<?php echo $dir?>/#faq">FAQ</a>
+				<a href="<?php echo $dir?>/#contacts">Contacts</a>
 			</div>
 			<div class="order-3 col-12 col-xl-5 mt-5 mt-xl-0 text-center text-md-left">
 				<p class="text-14">Jambler.io PGP fingerprint:</p>
 				<p>
 					<a class="fingerprint" href=" https://jambler.io/pgp-key.txt" download>B8A5 CFCA F63F F2D8 384A 6B12 D3B2 8095 6F0E 7CAF</a>
 				</p>
-				<p class="mb-0 text-14">Follow the link to download a public key to verify the letters of guarantee provided by the platform.<br>* For more information on how it works, see <a href="<?=$dir?>/#faq"><b>FAQ</b></a>
+				<p class="mb-0 text-14">Follow the link to download a public key to verify the letters of guarantee provided by the platform.<br>* For more information on how it works, see <a href="<?php echo $dir?>/#faq"><b>FAQ</b></a>
 				</p>
 			</div>
 		</div>
