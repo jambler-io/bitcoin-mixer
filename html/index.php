@@ -4,7 +4,7 @@
 $YOUR_JAMBLER_API_KEY = '__YOUR_JAMBLER_API_KEY__';
 
 $titles = array(
-	'index' => 'Main page — {mixer_name}',
+	'index' => '{mixer_name} — bitcoin mixer 2.0',
 	'mix' => 'Second page — {mixer_name}',
 	'result' => 'First page — {mixer_name}'
 );
@@ -107,7 +107,7 @@ function addressValidator($address) {
 	if (empty($file)) {
 		$file = array();
 	}
-	$hash = md5($YOUR_JAMBLER_API_KEY.substr($addr, 6, -6));
+	$hash = md5($YOUR_JAMBLER_API_KEY.substr($address, 6, -6));
 	$row = current(preg_grep('/'.$hash.'/', $file));
 	if (empty($row)) {
 		$file[] = $exit."\t".date('U')."\t".$hash."\t1\n";
@@ -130,7 +130,7 @@ function addressValidator($address) {
 				unset($file[$row_num]);
 			}
 			else {
-				$file[$row_num] = $exit."\t".$ut."\t".$hash."\t".($count + 1)."\n";
+				$file[$row_num] = $exit."\t".$ut."\t".$hash."\t".((int)$count + 1)."\n";
 			}
 			file_put_contents('addresses.php', implode('', $file), LOCK_EX);
 		}
@@ -250,13 +250,13 @@ $description = $descriptions[$p];
 	<meta name="description" content="<?php echo @$description?>" />
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-	<!--[if IE]><link rel="shortcut icon" href="<?php echo $cdn?>/images/favicon.ico"><![endif]-->
-	<link rel="apple-touch-icon-precomposed" href="<?php echo $cdn?>/images/apple-touch-icon-precomposed.png">
-	<link rel="icon" href="<?php echo $cdn?>/images/favicon.png">
+	<!--[if IE]><link rel="shortcut icon" href="<?php echo $cdn?>/j-images/favicon.ico"><![endif]-->
+	<link rel="apple-touch-icon-precomposed" href="<?php echo $cdn?>/j-images/apple-touch-icon-precomposed.png">
+	<link rel="icon" href="<?php echo $cdn?>/j-images/favicon.png">
 	<link rel="stylesheet" href="<?php echo $cdn?>/bootstrap/bootstrap.min.css?v=<?php echo $version?>">
-	<link rel="stylesheet" href="<?php echo $cdn?>/icons/fa.css?v=<?php echo $version?>">
-	<link rel="stylesheet" href="<?php echo $cdn?>/icons/style.css?v=<?php echo $version?>">
-	<link rel="stylesheet" href="<?php echo $cdn?>/fonts/style.css?v=<?php echo $version?>">
+	<link rel="stylesheet" href="<?php echo $cdn?>/j-icons/fa.css?v=<?php echo $version?>">
+	<link rel="stylesheet" href="<?php echo $cdn?>/j-icons/style.css?v=<?php echo $version?>">
+	<link rel="stylesheet" href="<?php echo $cdn?>/j-fonts/style.css?v=<?php echo $version?>">
 	<link rel="stylesheet" href="<?php echo $cdn?>/style.tpl.css?v=<?php echo $version?>">
 	<link rel="stylesheet" href="<?php echo $cdn?>/libs/toastr.min.css?v=<?php echo $version?>">
 	<script src="<?php echo $cdn?>/libs/jquery-3.3.1.min.js"></script>
@@ -312,7 +312,7 @@ $description = $descriptions[$p];
 					<h2 class="h1 text-center">How Does It Work?</h2>
 					<div class="row">
 						<div class="col-12 text-center">
-							<img class="mt-4 mb-4 scheme" src="<?php echo $cdn?>/images/scheme.tpl.png">
+							<img class="mt-4 mb-4 scheme" src="<?php echo $cdn?>/j-images/scheme.tpl.png">
 							<p class="text-20">Bitcoin is pseudo anonymous, all transactions are written in blockchain. Any person can obtain an access to the history of money transfers from one address to another one. Our service provides you with an opportunity to protect your anonymity.</p>
 							<p class="text-20">We apply an innovative algorithm, Bitcoin Mixer 2.0, to uplevel anonymity and money mixing in comparison with classic mixers. The main advantage of our service is that all the funds returned to you after a mixing procedure are verified coins from cryptocurrency stock exchanges having an undoubtedly positive history.</p>
 							<p class="text-20">An additional point is that you receive all your money in various parts at random time intervals and to the different addresses. It is probably the best anonymization algorithm as of today.</p>

@@ -65,7 +65,7 @@ a[href="#top"] {
 }
 
 header.index {
-	background: url(images/header.tpl.jpg) no-repeat bottom center;
+	background: url(j-images/header.tpl.jpg) no-repeat bottom center;
 	background-size: cover;
 }
 
@@ -222,7 +222,7 @@ header .logo::before {
 	top: 0;
 	right: 0;
 	bottom: 0;
-	background: url(images/logo-white.tpl.png) no-repeat center center;
+	background: url(j-images/logo-white.tpl.png) no-repeat center center;
 	filter: sepia(1) saturate(7) opacity(0.3) brightness(30%) hue-rotate(110deg);
 	-webkit-filter: sepia(1) saturate(7) opacity(0.3) brightness(30%) hue-rotate(110deg);
 	background-size: contain;
@@ -238,7 +238,7 @@ footer {
 footer .logo {
 	margin-bottom: 10px;
 	color: #fff;
-	background: url(images/logo-white.tpl.png) no-repeat left;
+	background: url(j-images/logo-white.tpl.png) no-repeat left;
 	background-size: 25px;
 	padding-left: 40px;
 	padding-bottom: 10px;
@@ -385,7 +385,7 @@ footer a.fingerprint:hover {
 		top: 0;
 		right: 0;
 		bottom: 0;
-		background: url(images/logo-white.tpl.png) no-repeat center center;
+		background: url(j-images/logo-white.tpl.png) no-repeat center center;
 		background-size: contain;
 		opacity: .3;
 	}

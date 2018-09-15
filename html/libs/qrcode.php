@@ -1,4 +1,4 @@
-<?
+<?php
 include('PackageLoader.php');
 
 $loader = new PackageLoader\PackageLoader();

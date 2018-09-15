@@ -1,4 +1,4 @@
-<?
+<?php
 if (!$_GET['address']) {
 	echo 0;
 	exit;

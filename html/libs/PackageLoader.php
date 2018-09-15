@@ -1,4 +1,4 @@
-<?
+<?php
 namespace PackageLoader;
 class PackageLoader
 {
