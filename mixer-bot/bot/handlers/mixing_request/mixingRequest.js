@@ -7,7 +7,7 @@ const onFailureMixingRequest = require('./onFailureMixingRequest');
 const MixingRequest = async (userId, addrOne, addrTwo = '') => {
   antiDdos.setHit(userId);
   try {
-    const result = await request.post(`${config.BACKEND_URL}/rest/partners/orders/${config.COIN_ID}`, {
+    const result = await request.post(`${config.BACKEND_URL}/partners/orders/${config.COIN_ID}`, {
       headers: {
         'Content-Type': 'application/json',
         'xkey': config.PARTNER_API_TOKEN

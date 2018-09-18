@@ -189,7 +189,7 @@ mkdir -p ${TELEGRAM_BOT_DIRECTORY}
 cp -R ${TELEGRAM_BOT_SOURCE}/* ${TELEGRAM_BOT_DIRECTORY}/
 cd ${TELEGRAM_BOT_DIRECTORY}/
 npm i -g npm
-npm install
+#npm install
 
 
 # create autorun script
@@ -203,12 +203,12 @@ user = root" > /etc/supervisor/conf.d/jambler_tbot.conf
 systemctl enable fail2ban
 systemctl enable php7.0-fpm
 systemctl enable nginx
-systemctl enable supervisor
+#systemctl enable supervisor
 
 # start services
 systemctl restart fail2ban
 systemctl restart php7.0-fpm
 systemctl restart nginx
-systemctl restart supervisor
+#systemctl restart supervisor
 
 
