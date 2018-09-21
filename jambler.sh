@@ -150,11 +150,17 @@ echo "server {
 }" > /etc/nginx/conf.d/tor_site.conf
 
 echo "server {
-    listen 80;
-#    listen 443 ssl;
     server_name ${CLEARNET_SITE_SERVERNAME};
-
+##########################################
+# Line below should be commented in case of SSL certificate is applied
+    listen 80;
+#
+##########################################
+#    SSL block: lines below should be uncommented in case of SSL cerificate applied
+##########################################
+#
 #    ssl on;
+#    listen 443 ssl;
 #    ssl_protocols TLSv1.1 TLSv1.2;
 #    ssl_ciphers \"EECDH+ECDSA+AESGCM:EECDH+aRSA+AESGCM:EECDH+ECDSA+SHA384:EECDH+ECDSA+SHA256:EECDH+aRSA+SHA384:EECDH+aRSA+SHA256:EECDH+aRSA+RC4:EECDH:EDH+aRSA:DES-CBC3-SHA:!DES:!RC4:!aNULL:!eNULL:!LOW:!MD5:!EXP:!PSK:!SRP:!DSS:!CAMELLIA:!SEED\";
 #    ssl_session_cache shared:SSL:10m;
@@ -162,6 +168,9 @@ echo "server {
 #    ssl_certificate_key ${CLEARNET_SITE_SSL_DIRECTORY}/site.key;
 #    ssl_session_timeout  5m;
 #    ssl_prefer_server_ciphers   on;
+#
+##########################################
+
     access_log  /var/log/nginx/www-access-site.log;
     error_log   /var/log/nginx/www-error-site.log;
 
