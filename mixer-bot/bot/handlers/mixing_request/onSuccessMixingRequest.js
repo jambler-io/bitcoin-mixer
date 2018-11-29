@@ -9,9 +9,9 @@ const onSuccessMixingRequest = async (userId,body) => {
   const messageOptions = { parse_mode: PARSE_MODE, disable_web_page_preview: false }
   await bot.sendMessage(userId, Messages.GUARANTEE_LETTER_HEADER, messageOptions);
   await bot.sendMessage(userId, guarantee, messageOptions);
-  await bot.sendMessage(userId, Messages.PlaseSendToAdress(Variables), messageOptions);
+  await bot.sendMessage(userId, Messages.SendToAddress(Variables), messageOptions);
   await bot.sendMessage(userId, `<pre>${address}</pre>`, messageOptions);
-  await bot.sendMessage(userId, Messages.AdressWillAviable(Variables), messageOptions);
+  await bot.sendMessage(userId, Messages.AddressAvailability(Variables), messageOptions);
   const qr = QRCode.imageSync(address, { type: 'png' }) 
   await bot.sendPhoto(userId, qr, { ...messageOptions, reply_markup: {  resize_keyboard: true, keyboard: Markups.STANDARD }});
   messages.push(sendToWalletMessage(address));
