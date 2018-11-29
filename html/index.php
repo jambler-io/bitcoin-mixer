@@ -15,6 +15,8 @@ $descriptions = array(
 	'result' => 'First page description'
 );
 
+$tor_address = '';
+
 ///////////////////////////////////////////////////
 
 $apiUrl = 'https://api.jambler.io';
@@ -23,7 +25,7 @@ $darkCDN = '';
 $coin_ids = array(
 	'btc'
 );
-$version = 5;
+$version = 13;
 
 
 if (isset($_GET['guarantee'])) {
@@ -37,6 +39,7 @@ $dir = dirname($_SERVER['PHP_SELF']);
 if (substr($dir, -1) === '/') {
 	$dir = substr($dir, 0, -1);
 }
+$query_string = !empty($_SERVER['QUERY_STRING']) ? '?'.$_SERVER['QUERY_STRING'] : '';
 
 $curl = curl_init();
 curl_setopt_array($curl, array(
@@ -63,6 +66,8 @@ elseif (!empty($info['error_message'])) {
 	echo $info['error_message'];
 	exit();
 }
+if (!isset($info['mixer_fee_pct'])) $info['mixer_fee_pct'] = 2;
+if (!isset($info['mixer_name'])) $info['mixer_name'] = 'Partner bitcoin mixer';
 $info['order_lifetime'] = floor($info['order_lifetime'] / 24);
 $info['mixer_fix_fee'] = round($info['mixer_fix_fee'] / 100000000, 5);
 $info['min_amount'] = round($info['min_amount'] / 100000000, 5);
@@ -214,23 +219,20 @@ if (isset($_GET['mix'])) {
 				$ERR['curl'] = $res['error_message'];
 			}
 			else {
-				$p = 'result';
+				header('Location: ?result&address='.$res['address'].'&guarantee_text='.bin2hex(gzcompress($res['guarantee'], 9)));
+				exit();
 			}
 		}
 	}
-	if (isset($_REQUEST['submit_calculator'])) {
-		$p = 'result';
-		$res = array(
-			'guarantee' => $_REQUEST['guarantee'],
-			'address' => $_REQUEST['address']
-		);
-	}
+}
 
-	if ($p == 'result') {
-		$you_send = !empty($_REQUEST['you_send']) ? $_REQUEST['you_send'] : 1;
-		$you_receive = $you_send - $you_send * $info['mixer_fee_pct'] / 100 - $info['mixer_fix_fee'];
+if (isset($_GET['result'])) {
+	$p = 'result';
+	if (!empty($_GET['guarantee_text'])) {
+		$guarantee_text = gzuncompress(hex2bin($_GET['guarantee_text']));
 	}
-
+	$you_send = !empty($_REQUEST['you_send']) ? $_REQUEST['you_send'] : 1;
+	$you_receive = $you_send - $you_send * $info['mixer_fee_pct'] / 100 - $info['mixer_fix_fee'];
 }
 
 foreach ($titles as $_p => $v) {
@@ -254,8 +256,6 @@ $description = $descriptions[$p];
 	<link rel="apple-touch-icon-precomposed" href="<?php echo $cdn?>/j-images/apple-touch-icon-precomposed.png">
 	<link rel="icon" href="<?php echo $cdn?>/j-images/favicon.png">
 	<link rel="stylesheet" href="<?php echo $cdn?>/bootstrap/bootstrap.min.css?v=<?php echo $version?>">
-	<link rel="stylesheet" href="<?php echo $cdn?>/j-icons/fa.css?v=<?php echo $version?>">
-	<link rel="stylesheet" href="<?php echo $cdn?>/j-icons/style.css?v=<?php echo $version?>">
 	<link rel="stylesheet" href="<?php echo $cdn?>/j-fonts/style.css?v=<?php echo $version?>">
 	<link rel="stylesheet" href="<?php echo $cdn?>/style.tpl.css?v=<?php echo $version?>">
 	<link rel="stylesheet" href="<?php echo $cdn?>/libs/toastr.min.css?v=<?php echo $version?>">
@@ -276,11 +276,42 @@ $description = $descriptions[$p];
 </head>
 
 <body>
-
+	<svg aria-hidden="true" style="position: absolute; width: 0; height: 0; overflow: hidden;" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+	<defs>
+	<symbol id="icon-bitcoin" viewBox="0 0 32 32">
+	<path d="M26.651 16.788c-0.743-0.961-1.865-1.622-3.365-1.981 1.91-0.974 2.75-2.628 2.519-4.962-0.077-0.846-0.311-1.58-0.702-2.201s-0.92-1.122-1.587-1.5c-0.667-0.379-1.392-0.667-2.173-0.866s-1.68-0.343-2.692-0.433v-4.846h-2.961v4.712c-0.513 0-1.295 0.013-2.346 0.038v-4.75h-2.962v4.846c-0.423 0.013-1.045 0.019-1.865 0.019l-4.077-0.019v3.154h2.135c0.974 0 1.545 0.436 1.712 1.308v5.519c0.128 0 0.231 0.007 0.308 0.019h-0.308v7.731c-0.102 0.654-0.474 0.981-1.115 0.981h-2.134l-0.596 3.519h3.846c0.244 0 0.596 0.003 1.058 0.009s0.807 0.010 1.038 0.010v4.904h2.962v-4.846c0.538 0.013 1.32 0.019 2.346 0.019v4.827h2.961v-4.904c1.052-0.051 1.984-0.147 2.798-0.288s1.593-0.362 2.337-0.664c0.743-0.301 1.365-0.676 1.865-1.125s0.913-1.019 1.241-1.712c0.326-0.692 0.535-1.494 0.624-2.404 0.167-1.782-0.121-3.154-0.865-4.115zM13.4 8.211c0.090 0 0.343-0.003 0.76-0.010s0.763-0.013 1.039-0.019c0.276-0.006 0.648 0.010 1.116 0.048s0.862 0.090 1.183 0.154 0.673 0.17 1.058 0.317c0.385 0.147 0.692 0.327 0.923 0.538s0.426 0.481 0.586 0.808c0.16 0.327 0.241 0.702 0.241 1.125 0 0.359-0.058 0.686-0.173 0.981s-0.289 0.542-0.519 0.74c-0.231 0.199-0.468 0.372-0.712 0.519s-0.555 0.266-0.933 0.356c-0.378 0.090-0.708 0.16-0.99 0.211s-0.635 0.087-1.058 0.106c-0.423 0.019-0.744 0.032-0.962 0.039s-0.516 0.006-0.894 0c-0.378-0.006-0.599-0.010-0.664-0.010v-5.904h-0zM21.487 21.307c-0.122 0.295-0.279 0.552-0.471 0.77s-0.446 0.41-0.76 0.577c-0.314 0.167-0.619 0.301-0.913 0.404s-0.651 0.192-1.067 0.269c-0.417 0.077-0.782 0.131-1.097 0.163s-0.689 0.058-1.125 0.077c-0.436 0.019-0.776 0.029-1.019 0.029s-0.551-0.003-0.923-0.010c-0.372-0.006-0.609-0.009-0.712-0.009v-6.5c0.102 0 0.407-0.006 0.913-0.019s0.92-0.019 1.24-0.019c0.32 0 0.763 0.019 1.327 0.058s1.038 0.096 1.423 0.173c0.384 0.077 0.804 0.195 1.26 0.356s0.824 0.356 1.106 0.586c0.282 0.231 0.519 0.526 0.711 0.885s0.289 0.769 0.289 1.231c-0 0.359-0.061 0.686-0.183 0.981z"></path>
+	</symbol>
+	<symbol id="icon-reddit" viewBox="0 0 32 32">
+	<path d="M10.952 17.989v0.002h0.996z"></path>
+	<path d="M20.909 17.989v0.002h0.996z"></path>
+	<path d="M32 15.004c0-2.196-1.786-3.983-3.983-3.983-0.878 0-1.712 0.287-2.394 0.806-2.222-1.543-5.134-2.463-8.23-2.696l1.671-3.919 4.861 1.135c0.155 1.503 1.414 2.682 2.957 2.682 1.647 0 2.987-1.34 2.987-2.987s-1.34-2.987-2.987-2.987c-1.043 0-1.961 0.54-2.495 1.354l-5.681-1.328c-0.482-0.11-0.954 0.135-1.145 0.579l-2.31 5.416c-3.343 0.116-6.529 1.057-8.935 2.698-0.655-0.486-1.468-0.755-2.334-0.755-2.196 0-3.983 1.786-3.983 3.983 0 1.456 0.795 2.772 2.013 3.447-0.016 0.175-0.022 0.354-0.022 0.536 0 5.49 6.253 9.956 13.939 9.956 7.684 0 13.939-4.466 13.939-9.956 0-0.155-0.006-0.309-0.016-0.462 1.298-0.661 2.147-2.009 2.147-3.521zM26.882 5.048c0.548 0 0.996 0.446 0.996 0.996s-0.448 0.996-0.996 0.996-0.996-0.446-0.996-0.996c0-0.55 0.448-0.996 0.996-0.996zM8.961 17.991c0-1.097 0.894-1.991 1.991-1.991s1.991 0.894 1.991 1.991c0 1.099-0.894 1.991-1.991 1.991s-1.991-0.892-1.991-1.991zM20.528 24.596c-1.374 0.994-2.987 1.491-4.598 1.491s-3.224-0.498-4.598-1.491c-0.446-0.323-0.546-0.946-0.223-1.39s0.946-0.544 1.39-0.223c2.053 1.483 4.809 1.488 6.862 0 0.444-0.321 1.065-0.225 1.39 0.223 0.323 0.446 0.221 1.067-0.223 1.39zM20.909 19.983c-1.099 0-1.991-0.892-1.991-1.991 0-1.097 0.892-1.991 1.991-1.991s1.991 0.894 1.991 1.991c0 1.099-0.892 1.991-1.991 1.991z"></path>
+	</symbol>
+	<symbol id="icon-telegram" viewBox="0 0 32 32">
+	<path d="M0.565 15.429l7.373 2.752 2.854 9.178c0.183 0.588 0.901 0.805 1.379 0.415l4.11-3.351c0.431-0.351 1.044-0.369 1.495-0.042l7.413 5.382c0.51 0.371 1.233 0.091 1.361-0.525l5.43-26.122c0.14-0.674-0.522-1.236-1.164-0.988l-30.261 11.674c-0.747 0.288-0.74 1.345 0.009 1.626zM10.333 16.716l14.41-8.875c0.259-0.159 0.525 0.191 0.303 0.397l-11.893 11.055c-0.418 0.389-0.688 0.91-0.764 1.475l-0.405 3.002c-0.054 0.401-0.617 0.441-0.727 0.053l-1.558-5.475c-0.178-0.624 0.082-1.291 0.634-1.632z"></path>
+	</symbol>
+	<symbol id="icon-email" viewBox="0 0 32 32">
+	<path d="M2.531 6.124l11.526 9.13c0.523 0.414 1.243 0.597 1.942 0.563 0.698 0.034 1.419-0.148 1.941-0.563l11.526-9.13c0.924-0.727 0.715-1.323-0.457-1.323h-26.019c-1.173 0-1.382 0.596-0.461 1.323z"></path>
+	<path d="M30.3 8.533l-12.596 9.563c-0.471 0.354-1.088 0.526-1.702 0.518-0.616 0.008-1.233-0.165-1.704-0.518l-12.598-9.563c-0.935-0.709-1.7-0.329-1.7 0.844v15.69c0 1.173 0.96 2.133 2.133 2.133h27.734c1.173 0 2.133-0.96 2.133-2.133v-15.69c0-1.173-0.765-1.553-1.7-0.844z"></path>
+	</symbol>
+	<symbol id="icon-top" viewBox="0 0 32 32">
+	<path d="M16 0c-8.821 0-15.999 7.178-15.999 16s7.177 16 15.999 16c8.822 0 15.999-7.178 15.999-16s-7.177-16-15.999-16zM25.765 21.296c-0.229 0.228-0.528 0.343-0.827 0.343s-0.599-0.115-0.828-0.343l-8.11-8.11-8.109 8.11c-0.457 0.457-1.199 0.457-1.656 0s-0.457-1.198 0-1.655l8.938-8.937c0.458-0.457 1.197-0.457 1.654 0l8.938 8.937c0.458 0.457 0.458 1.198 0.001 1.655z"></path>
+	</symbol>
+	<symbol id="icon-copy" viewBox="0 0 32 32">
+	<path d="M20.594 5.597h-14.876c-1.396 0-2.53 1.134-2.53 2.53v21.344c0 1.396 1.134 2.53 2.53 2.53h14.876c1.396 0 2.53-1.134 2.53-2.53v-21.344c-0.007-1.396-1.14-2.53-2.53-2.53zM21.348 29.464c0 0.419-0.341 0.76-0.76 0.76h-14.876c-0.419 0-0.76-0.341-0.76-0.76v-21.338c0-0.419 0.341-0.76 0.76-0.76h14.876c0.419 0 0.76 0.341 0.76 0.76v21.338z"></path>
+	<path d="M26.282 0h-14.876c-1.396 0-2.53 1.134-2.53 2.53 0 0.491 0.393 0.885 0.885 0.885s0.885-0.393 0.885-0.885c0-0.419 0.341-0.76 0.76-0.76h14.876c0.419 0 0.76 0.341 0.76 0.76v21.344c0 0.419-0.341 0.76-0.76 0.76-0.491 0-0.885 0.393-0.885 0.885s0.393 0.885 0.885 0.885c1.396 0 2.53-1.134 2.53-2.53v-21.344c0-1.396-1.134-2.53-2.53-2.53z"></path>
+	</symbol>
+	<symbol id="icon-key" viewBox="0 0 32 32">
+	<path d="M28.984 3.016c-4.021-4.021-10.563-4.021-14.584 0-2.747 2.747-3.701 6.794-2.511 10.466l-11.614 11.614c-0.176 0.176-0.275 0.414-0.275 0.663v5.304c0 0.518 0.419 0.937 0.938 0.937h5.304c0.249 0 0.487-0.099 0.663-0.275l1.326-1.327c0.202-0.202 0.301-0.486 0.268-0.771l-0.165-1.425 1.974-0.186c0.449-0.042 0.803-0.396 0.845-0.845l0.186-1.974 1.425 0.166c0.265 0.036 0.531-0.053 0.732-0.231s0.314-0.433 0.314-0.7v-1.746h1.714c0.249 0 0.487-0.099 0.663-0.275l2.404-2.372c3.671 1.19 7.649 0.308 10.395-2.44 4.021-4.021 4.021-10.563 0-14.584zM26.332 9.645c-1.097 1.097-2.88 1.097-3.977 0s-1.097-2.88 0-3.977 2.88-1.097 3.977 0 1.097 2.88 0 3.977z"></path>
+	</symbol>
+	</defs>
+	</svg>
 	<header class="<?php echo $p?>">
 		<div class="container">
 			<nav class="text-center">
 				<a href="<?php echo $dir?>/" class="logo" title="To main page"><?php echo $info['mixer_name']?></a>
+				<?php if (!empty($tor_address)) { ?>
+					<br>TOR: <a href="http://<?php echo $tor_address?>" target="_blank"><?php echo $tor_address?></a>
+				<?php } ?>
 				<div class="menu border-top-light nowrap pt-4 d-flex justify-content-between d-sm-block">
 					<a class="m-0 mr-sm-2 mr-xl-4" href="<?php echo $dir?>/#how">How Does It Work?</a>
 					<a class="m-0 ml-sm-2 mr-sm-2 ml-xl-4 mr-xl-4" href="<?php echo $dir?>/#benefits">Benefits</a>
@@ -294,7 +325,15 @@ $description = $descriptions[$p];
 				<div class="text-center">
 					<h1>Bitcoin Mixer&nbsp;2.0</h1>
 					<p class="big">Get cleanest coins from European, Asian and North American cryptocurrency stock exchanges</p>
-					<a href="<?php echo $dir?>/?mix" class="btn btn-jam btn-jam-xl">Start Bitcoin Anonymization</a>
+					<div class="btn-jam-wrapper">
+						<p>
+							<a href="<?php echo $dir?>/?mix" class="btn btn-jam btn-jam-xl mb-3">Start Bitcoin Anonymization</a>
+						</p>
+						<p>
+							<a href="<?php echo $dir?>/?mix=free" class="btn btn-jam btn-jam-xl btn-jam-white">Mix Coins For Free*</a>
+						</p>
+					</div>
+					<div style="display: inline-block; padding: 5px 15px; background: rgba(255, 255,255,.8);">* transaction amount for a free trial is 0,001 BTC</div>
 				</div>
 				<?php
 			}
@@ -432,7 +471,7 @@ $description = $descriptions[$p];
 					<div class="d-flex flex-wrap align-items-center mt-4 justify-content-center justify-content-sm-start">
 						<a href="https://bitcointalk.org/index.php?topic=4667343" target="_blank" class="rounded-with-icon d-flex flex-wrap mb-1">
 							<div class="inner-icon d-flex justify-content-center align-items-center">
-								<i class="fa fa-bitcoin"></i>
+								<svg class="icon"><use xlink:href="#icon-bitcoin"></use></svg>
 							</div>
 							<div class="d-flex align-items-center ml-3">BitcoinTalk</div>
 						</a>
@@ -442,7 +481,7 @@ $description = $descriptions[$p];
 					<div class="d-flex flex-wrap align-items-center mt-4 justify-content-center justify-content-sm-start">
 						<a href="https://www.reddit.com/user/Jambler_io/" target="_blank" class="rounded-with-icon d-flex flex-wrap mb-1">
 							<div class="inner-icon d-flex justify-content-center align-items-center">
-								<i class="fa fa-reddit"></i>
+								<svg class="icon"><use xlink:href="#icon-reddit"></use></svg>
 							</div>
 							<div class="d-flex align-items-center ml-3">Reddit</div>
 						</a>
@@ -456,7 +495,7 @@ $description = $descriptions[$p];
 					<div class="d-flex flex-wrap align-items-center mt-4 justify-content-center justify-content-sm-start">
 						<a href="http://t.me/jambler" target="_blank" class="rounded-with-icon d-flex flex-wrap mb-1">
 							<div class="inner-icon d-flex justify-content-center align-items-center">
-								<i class="fa fa-telegram"></i>
+								<svg class="icon"><use xlink:href="#icon-telegram"></use></svg>
 							</div>
 							<div class="d-flex align-items-center ml-3">Telegram</div>
 						</a>
@@ -466,7 +505,7 @@ $description = $descriptions[$p];
 					<div class="d-flex flex-wrap align-items-center mt-4 justify-content-center justify-content-sm-start">
 						<a href="mailto:support@jambler.io" class="rounded-with-icon d-flex flex-wrap mb-1">
 							<div class="inner-icon d-flex justify-content-center align-items-center">
-								<i class="fa fa-email"></i>
+								<svg class="icon"><use xlink:href="#icon-email"></use></svg>
 							</div>
 							<div class="d-flex align-items-center ml-3">E-mail</div>
 						</a>
@@ -474,9 +513,9 @@ $description = $descriptions[$p];
 					</div>
 
 					<div class="d-flex flex-wrap align-items-center mt-4 justify-content-center justify-content-sm-start">
-						<a href="pgp-key.txt" download class="rounded-with-icon d-flex flex-wrap mb-1">
+						<a href="https://jambler.io/pgp-key.txt" download class="rounded-with-icon d-flex flex-wrap mb-1">
 							<div class="inner-icon d-flex justify-content-center align-items-center">
-								<i class="fa fa-key"></i>
+								<svg class="icon"><use xlink:href="#icon-key"></use></svg>
 							</div>
 							<div class="d-flex align-items-center ml-3">PGP Open Key</div>
 						</a>
@@ -494,6 +533,9 @@ $description = $descriptions[$p];
 					<div class="text-center">
 						<h1>Bitcoin Mixer&nbsp;2.0</h1>
 						<p class="big mt-4 d-none d-sm-block">Get cleanest coins from<br>European, Asian and North American<br>cryptocurrency stock exchanges</p>
+						<?php if ($_GET['mix'] == 'free') {?>
+							<p> Test the quality of our service for free! Send 0,001 BTC for cleansing and pay no commission.</p>
+						<?php } ?>
 						<p class="mt-5">Enter your Bitcoin forward to address below:</p>
 					</div>
 					<div class="row mt-3">
@@ -507,10 +549,12 @@ $description = $descriptions[$p];
 								<div class="color-red text-left">
 									<?php echo @$ERR['forward_addr']?>
 								</div>
-								<input type="text" class="form-control mt-2" name="forward_addr2" value="<?php echo @$_REQUEST['forward_addr2']?>" placeholder="Enter second address (optional)">
-								<div class="color-red text-left">
-									<?php echo @$ERR['forward_addr2']?>
-								</div>
+								<?php if ($_GET['mix'] != 'free') {?>
+									<input type="text" class="form-control mt-2" name="forward_addr2" value="<?php echo @$_REQUEST['forward_addr2']?>" placeholder="Enter second address (optional)">
+									<div class="color-red text-left">
+										<?php echo @$ERR['forward_addr2']?>
+									</div>
+								<?php } ?>
 								<div class="row mt-4">
 									<div class="col-12">
 										<button type="submit" name="submit_mix" class="btn btn-jam">Mix My Coins</button>
@@ -539,19 +583,21 @@ $description = $descriptions[$p];
 				<div class="container">
 					<div class="text-center">
 						<h1>Bitcoin Mixer&nbsp;2.0</h1>
-						<form class="mt-4" action="<?php echo $dir?>/?guarantee" method="POST">
-							<input type="hidden" name="text" value="<?php echo $res['guarantee']?>">
-							<button type="submit" class="d-inline a underline btn btn-link text-30">Download Letter of Guarantee</button>
-						</form>
+						<?php if (!empty($guarantee_text)) { ?>
+							<form class="mt-4" action="<?php echo $dir?>/?guarantee" method="POST">
+								<input type="hidden" name="text" value="<?php echo $guarantee_text?>">
+								<button type="submit" class="d-inline a underline btn btn-link text-30">Download Letter of Guarantee</button>
+							</form>
+						<?php } ?>
 						<p class="mt-4">Please send your bitcoins (min <?php echo $info['min_amount']?>, max <?php echo $info['max_amount']?> BTC) to</p>
 						<div class="btn-jam pl-5 pr-5" style="position: relative; height: auto">
-							<i class="fa fa-copy d-none pointer" style="position: absolute; right: 5px; top: 5px;" data-text="<?php echo $res['address']?>" title="Copy to clipboard"></i>
+							<svg class="icon copy-to-clipboard d-none pointer" style="position: absolute; right: 5px; top: 5px;" data-text="<?php echo $_GET['address']?>" title="Copy to clipboard"><use xlink:href="#icon-copy"></use></svg>
 							<span class="break-word">
-							<?php echo $res['address']?>
+							<?php echo $_GET['address']?>
 							</span>
 						</div>
 						<div class="mt-3 text-center">
-							<img src="<?php echo $cdn?>/libs/qrcode.php?text=bitcoin:<?php echo $res['address']?>">
+							<img src="<?php echo $cdn?>/libs/qrcode.php?text=bitcoin:<?php echo $_GET['address']?>">
 							<div id="loader" class="d-none">
 								<div id="block-1" class="loader-block"></div>
 								<div id="block-2" class="loader-block"></div>
@@ -566,18 +612,18 @@ $description = $descriptions[$p];
 								$(document).ready(function() {
 									$('#loader').removeClass('d-none');
 									var req = function() {
-										$.get('<?php echo $cdn?>/libs/blockchain-info.php?address=<?php echo $res['address']?>').done(resp => {
+										$.get('<?php echo $cdn?>/libs/blockchain-info.php?address=<?php echo $_GET['address']?>').done(resp => {
 											resp = JSON.parse(resp);
 											if (resp.err) {
 												$('#blockchain_error').text(resp.err);
 												$('#blockchain_error').removeClass('d-none');
-												$('#loader').hide();
+												$('#loader').addClass('d-none');
 											}
 											else if (+resp.total_received === 0) {
 												setTimeout(req, 20000);
 											}
 											else {
-												$('#loader').hide();
+												$('#loader').addClass('d-none');
 												$('#blockchain_result span').text(
 													Math.round((resp.total_received / 100000000) * 100000) / 100000
 												);
@@ -590,7 +636,7 @@ $description = $descriptions[$p];
 							</script>
 						</div>
 						<div class="mt-4 text-center">
-							<a href="<?php echo $dir?>/?mix" class="btn btn-jam btn-jam-white">Mix More Coins</a>
+							<a href="<?php echo $dir?>/?mix<?php echo (!empty($_GET['mix']) ? '=' : '').$_GET['mix'];?>" class="btn btn-jam btn-jam-white">Mix More Coins</a>
 						</div>
 					</div>
 
@@ -598,15 +644,12 @@ $description = $descriptions[$p];
 						<a name="calculator"></a>
 						<h2 class="text-center">Exact Value & Fee Calculator</h2>
 
-						<form class="mt-4" action="<?php echo $dir?>/#calculator" method="POST">
-							<input type="hidden" name="guarantee" value="<?php echo $res['guarantee']?>">
-							<input type="hidden" name="address" value="<?php echo $res['address']?>">
-
+						<form class="mt-4" action="<?php echo $dir.'/'.$query_string?>#calculator" method="POST">
 							<div class="form-group row">
 								<label class="col-2 col-form-label text-right">You send:</label>
 								<div class="col-3">
 									<div class="input-group">
-										<input type="number" class="form-control text-right" name="you_send" value="<?php echo $you_send?>" min="<?php echo $info['min_amount']?>" max="<?php echo $info['max_amount']?>" step=".001" required>
+										<input type="number" class="form-control text-right" name="you_send" value="<?php echo $you_send?>" step=".001" required>
 										<div class="input-group-append">
 											<span class="input-group-text">BTC</span>
 										</div>
@@ -645,21 +688,26 @@ $description = $descriptions[$p];
 				<a href="<?php echo $dir?>/" class="logo" title="To main page"><?php echo $info['mixer_name']?></a>
 			</div>
 			<div class="order-2 order-md-1 col-12 col-md-6 col-xl-4 d-flex flex-column justify-content-between">
+				<?php if (!empty($tor_address)) { ?>
+					<div class="mt-4 mt-md-0 text-center text-md-left">
+						TOR: <a href="http://<?php echo $tor_address?>" target="_blank"><?php echo $tor_address?></a>
+					</div>
+				<?php } ?>
 				<div class="d-none d-md-block">
 					Powered by <a href="http://jambler.io" target="_blank">Jambler.io</a>
 				</div>
 				<div class="icons mt-5 text-center text-md-left">
 					<a href="mailto:support@jambler.io" class="mr-3">
-						<i class="fa fa-email"></i>
+						<svg class="icon"><use xlink:href="#icon-email"></use></svg>
 					</a>
 					<a href="http://t.me/jambler" target="_blank" class="mr-3">
-						<i class="fa fa-telegram"></i>
+						<svg class="icon"><use xlink:href="#icon-telegram"></use></svg>
 					</a>
 					<a href="https://bitcointalk.org/index.php?topic=4667343" target="_blank" class="mr-3">
-						<i class="fa fa-bitcoin"></i>
+						<svg class="icon"><use xlink:href="#icon-bitcoin"></use></svg>
 					</a>
 					<a href="https://www.reddit.com/user/Jambler_io/" target="_blank">
-						<i class="fa fa-reddit"></i>
+						<svg class="icon"><use xlink:href="#icon-reddit"></use></svg>
 					</a>
 				</div>
 			</div>
@@ -685,7 +733,7 @@ $description = $descriptions[$p];
 </footer>
 <a name="top"></a>
 <a href="#top">
-	<i class="fa fa-top"></i>
+	<svg class="icon"><use xlink:href="#icon-top"></use></svg>
 </a>
 </body>
 
