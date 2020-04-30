@@ -172,6 +172,13 @@ section {
 	border-bottom: 2px solid #95a6ae;
 }
 
+svg.icon {
+	display: inline-block;
+	stroke-width: 0;
+	stroke: currentColor;
+	fill: currentColor;
+}
+
 .rounded-with-icon {
 	border: 3px solid #000;
 	border-radius: 25px;
@@ -193,8 +200,9 @@ a.rounded-with-icon:hover {
 	background: #000;
 }
 
-.rounded-with-icon .inner-icon .fa {
-	font-size: 1.75rem;
+.rounded-with-icon .inner-icon svg.icon {
+	width: 1.5rem;
+	height: 1.5rem;
 	color: #fff;
 }
 
@@ -264,7 +272,7 @@ footer .icons a {
 	transition: transform .1s;
 	font-size: 1.125rem;
 	text-align: center;
-	padding-top: 2px;
+	padding-top: 4px;
 }
 
 footer .icons a:hover {
@@ -272,8 +280,9 @@ footer .icons a:hover {
 	text-decoration: none;
 }
 
-footer .icons .fa {
-	font-size: rem;
+footer .icons a svg.icon {
+	width: 1em;
+	height: 1em;
 }
 
 footer a.fingerprint {
@@ -333,8 +342,9 @@ footer a.fingerprint:hover {
 		height: 42px;
 		border-radius: 21px;
 	}
-	.rounded-with-icon .inner-icon .fa {
-		font-size: 1.475rem;
+	.rounded-with-icon .inner-icon svg.icon {
+		width: 1.25rem;
+		height: 1.25rem;
 	}
 }
 
