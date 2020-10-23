@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Jambler.io partner mixer installation script v1.3.0
-# Applied to a clean Debian 9 VPS.
+# Applied to a clean Debian 10 VPS.
 #
 #  The script:
 #   - downloads and configures required packages
