@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Jambler.io partner mixer installation script v1.2.0
+# Jambler.io partner mixer installation script v1.3.0
 # Applied to a clean Debian 9 VPS.
 #
 #  The script:
@@ -44,7 +44,7 @@
 		fi
 	}
 
-	logEcho() {
+	printAndLog() {
 
 	# A simple helper to write the same thing in both the log and the terminal.
 
@@ -198,20 +198,33 @@
 
 	obtainUserInfo
 
+# Announce the start of automated segment
+
+	printAndLog "-----------------------------------------------------"
+	printAndLog "Staring automated deployment."
+	printAndLog "This may take anywhere between 2 minutes and an hour,"
+	printAndLog "depending on disk speed and internet connection."
+	printAndLog "-----------------------------------------------------"
+	printAndLog " "
+
 # Update package list
 
-	waitForTask "apt-get update" "Updating the list of available packages..."
+	waitForTask "apt update" "Updating the list of available packages..."
+
+# Make sure wget is installed
+
+	waitForTask "apt -y install wget" "Making sure wget is installed..."
 
 # Install git
 
-	waitForTask "apt-get -y install apt-transport-https dirmngr curl sudo" \
+	waitForTask "apt -y install apt-transport-https dirmngr curl sudo" \
 				"Installing prerequisites for git..."
 
 	if test `which git|wc -l` -eq 0 ; then
 		log "Installing git."
-	    waitForTask "apt-get -y install git" "Installing git..."
+	    waitForTask "apt -y install git" "Installing git..."
 	else
-		logEcho "Git is already installed."
+		printAndLog "Git is already installed."
 	fi
 
 # Clone the partner mixer repo
@@ -229,7 +242,7 @@
 
 # Install Tor
 
-	logEcho "Preparing to install Tor..."
+	printAndLog "Preparing to install Tor..."
 
 	if test `cat /etc/apt/sources.list|grep torproject|wc -l` -eq 0 ; then
 		log "Adding Tor Project repositories."
@@ -242,10 +255,10 @@
         gpg --keyserver keys.gnupg.net --recv A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89 2>&1 | log
         gpg --export A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89 | apt-key add - 2>&1 | log
 
-        waitForTask "apt-get -y --allow-unauthenticated install tor" \
+        waitForTask "apt -y --allow-unauthenticated install tor" \
         			"Installing Tor..."
 	else
-		logEcho "Tor is already installed."
+		printAndLog "Tor is already installed."
     fi
 
 # Make sure Tor was installed successfully before continuing
@@ -255,7 +268,7 @@
     	echo "ERROR: Tor not installed!"
     	echo "You may be able to find more details in ${LOG_FILE}"
         echo "You can try installing Tor maually and then running this script again."
-        echo "Use the command: apt-get -y install tor"
+        echo "Use the command: apt -y install tor"
         echo
         exit 1
     fi
@@ -273,7 +286,7 @@
 
 # Start Tor
 
-	logEcho "Starting Tor..."
+	printAndLog "Starting Tor..."
 	service tor stop 2>&1 | log
 	service tor start 2>&1 | log
 
@@ -288,32 +301,32 @@
 # Install Nginx
 
 	if test `cat /etc/apt/sources.list|grep nginx|wc -l` -eq 0 ; then
-		logEcho "Adding repositories for Nginx."
+		printAndLog "Adding repositories for Nginx."
 		echo "deb http://nginx.org/packages/debian/ stretch nginx" >> /etc/apt/sources.list
 		echo "deb-src http://nginx.org/packages/debian/ stretch nginx" >> /etc/apt/sources.list
 	fi
 
 	if test `which nginx|wc -l` -eq 0 ; then
-		waitForTask "apt-get -y --allow-unauthenticated install nginx" \
+		waitForTask "apt -y --allow-unauthenticated install nginx" \
 					"Installing Nginx..."
 	else
-		logEcho "Nginx is already installed."
+		printAndLog "Nginx is already installed."
 	fi
 
 # Install php-fpm, fail2ban, supervisor, Java, etc.
 
-	waitForTask "apt-get -y install php-fpm php-curl php-mbstring php-gd php-bcmath" \
+	waitForTask "apt -y install php-fpm php-curl php-mbstring php-gd php-bcmath" \
 				"Installing PHP..."
 
-	waitForTask "apt-get -y install openjdk-8-jdk-headless openjdk-8-jre-headless" \
+	waitForTask "apt -y install default-jre-headless" \
 				"Installing Java..."
 
-	waitForTask "apt-get -y install fail2ban supervisor" \
+	waitForTask "apt -y install fail2ban supervisor" \
 				"Installing additional packages..."
 
 # Install Node.js
 
-	if test `which nodejs|wc -l` -eq 0 ; then
+	if test `which nodejs | wc -l` -eq 0 ; then
 
 		wget -qO /tmp/node.sh https://deb.nodesource.com/setup_8.x 2>&1 | log
 		chmod +x /tmp/node.sh 2>&1 | log
@@ -322,21 +335,36 @@
 
 		rm -f /tmp/node.sh 2>&1 | log
 
-		waitForTask "apt-get install -y nodejs" \
+		waitForTask "apt install -y nodejs" \
 	    			"Installing Node.js..."
 	else
-		logEcho "Node.js is already installed."
+		printAndLog "Node.js is already installed."
 	fi
+
+# Install npm
+
+	if test `which npm | wc -l` -eq 0 ; then
+
+		waitForTask "apt install -y npm" \
+	    			"Installing npm..."
+	else
+		printAndLog "npm is already installed."
+	fi
+
+# Get PHP version
+
+PHP_VER=`php --version`
+PHP_VER=${PHP_VER:4:3}
 
 # Configure Nginx and PHP parameters
 
-logEcho "Configuring PHP and Nginx..."
+printAndLog "Configuring PHP and Nginx..."
 
 	if test `cat /etc/nginx/nginx.conf|grep max_ranges|grep 0|wc -l` -eq 0 ; then
 	    sed -i 's/http {/http {\n    max_ranges       0;\n/' /etc/nginx/nginx.conf 2>&1 | log
 	fi
-	if test `cat /etc/php/7.0/fpm/php.ini|grep short_open_tag|grep -i on|wc -l` -eq 0 ; then
-	    sed -i 's/^short_open_tag.*/short_open_tag = On/' /etc/php/7.0/fpm/php.ini 2>&1 | log
+	if test `cat /etc/php/${PHP_VER}/fpm/php.ini|grep short_open_tag|grep -i on|wc -l` -eq 0 ; then
+	    sed -i 's/^short_open_tag.*/short_open_tag = On/' /etc/php/${PHP_VER}/fpm/php.ini 2>&1 | log
 	fi
 
 # Create site directory and write Nginx configuration
@@ -359,7 +387,7 @@ logEcho "Configuring PHP and Nginx..."
 	if [[ -e $TOR_SITE_SERVERNAME_FILE ]]; then
 		TOR_SITE_SERVERNAME=`cat ${TOR_SITE_SERVERNAME_FILE}`
 	else
-		logEcho "Tor hostname file not found! Attempting to restart Tor."
+		printAndLog "Tor hostname file not found! Attempting to restart Tor."
 		service tor stop 2>&1 | log
 		service tor start 2>&1 | log
 		sleep 5
@@ -403,7 +431,7 @@ echo "server {
     location ~* \\.php\$ {
         try_files \$uri = 404;
         fastcgi_split_path_info ^(.+\\.php)(/.+)\$;
-        fastcgi_pass unix:/var/run/php/php7.0-fpm.sock;
+        fastcgi_pass unix:/var/run/php/php${PHP_VER}-fpm.sock;
         fastcgi_index index.php;
         fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
         include fastcgi_params;
@@ -447,7 +475,7 @@ server_name ${CLEARNET_SITE_SERVERNAME};
     location ~* \\.php\$ {
         try_files \$uri = 404;
         fastcgi_split_path_info ^(.+\\.php)(/.+)\$;
-        fastcgi_pass unix:/var/run/php/php7.0-fpm.sock;
+        fastcgi_pass unix:/var/run/php/php${PHP_VER}-fpm.sock;
         fastcgi_index index.php;
         fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
         include fastcgi_params;
@@ -484,40 +512,40 @@ stderr_logfile=/var/log/telegram-bot.log" > /etc/supervisor/conf.d/jambler_tbot.
 
 # Enable and start all the services
 	
-	logEcho "Enabling and starting all the services..."
+	printAndLog "Enabling and starting all the services..."
 
 	service supervisor start
 
 	systemctl enable fail2ban 2>&1 | log
-	systemctl enable php7.0-fpm 2>&1 | log
+	systemctl enable php${PHP_VER}-fpm 2>&1 | log
 	systemctl enable nginx 2>&1 | log
 
 	log "Issuing the commands to restart fail2ban, PHP and Nginx."
 
 	systemctl restart fail2ban 2>&1 | log
-	systemctl restart php7.0-fpm 2>&1 | log
+	systemctl restart php${PHP_VER}-fpm 2>&1 | log
 	systemctl restart nginx 2>&1 | log
 
 
 	echo
-	logEcho "All finished."
+	printAndLog "All finished."
 	echo
 
 	if [[ "$TOR_SITE_SERVERNAME" == "UNDEFINED" ]]; then
-		logEcho "Something went wrong and we could not get the Tor hostname."
-		logEcho "This means your mixer will not be available through Tor."
-		logEcho "To fix this, you can try the following:"
-		logEcho "	Issue the commands: 'service tor stop', then 'service tor start'."
-		logEcho "	Next, check if this file exists: ${TOR_SITE_SERVERNAME_FILE}."
-		logEcho "	If it does, copy the hostname from it and paste it"
-		logEcho "	into /etc/nginx/conf.d/tor_site.conf as the server_name parameter."
+		printAndLog "Something went wrong and we could not get the Tor hostname."
+		printAndLog "This means your mixer will not be available through Tor."
+		printAndLog "To fix this, you can try the following:"
+		printAndLog "	Issue the commands: 'service tor stop', then 'service tor start'."
+		printAndLog "	Next, check if this file exists: ${TOR_SITE_SERVERNAME_FILE}."
+		printAndLog "	If it does, copy the hostname from it and paste it"
+		printAndLog "	into /etc/nginx/conf.d/tor_site.conf as the server_name parameter."
 	else
-		logEcho "Your mixer is available through Tor at ${TOR_SITE_SERVERNAME}"
-		logEcho "(you can view this address anytime in ${TOR_SITE_SERVERNAME_FILE})."
+		printAndLog "Your mixer is available through Tor at ${TOR_SITE_SERVERNAME}"
+		printAndLog "(you can view this address anytime in ${TOR_SITE_SERVERNAME_FILE})."
 	fi
 	
 	echo
-	logEcho "You can view a detailed log of the installation in ${LOG_FILE}"
+	printAndLog "You can view a detailed log of the installation in ${LOG_FILE}"
 	echo
-	logEcho "If something is not working for you, let us know: https://jambler.io/contact-us.php"
+	printAndLog "If something is not working for you, let us know: https://jambler.io/contact-us.php"
 	echo
