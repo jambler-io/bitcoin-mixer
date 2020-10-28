@@ -307,6 +307,12 @@
 	fi
 
 	if test `which nginx|wc -l` -eq 0 ; then
+
+		# We've seen some hosters include Apache in their VPS templates out of the box.
+		# If Apache is there, it will not let nginx get installed, so attempt to delete it.
+		waitForTask "apt -y remove apache2" \
+					"Checking and removing Apache..."
+
 		waitForTask "apt -y --allow-unauthenticated install nginx" \
 					"Installing Nginx..."
 	else
