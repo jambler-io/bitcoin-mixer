@@ -334,7 +334,7 @@
 
 	if test `which nodejs | wc -l` -eq 0 ; then
 
-		wget -qO /tmp/node.sh https://deb.nodesource.com/setup_8.x 2>&1 | log
+		wget -qO /tmp/node.sh https://deb.nodesource.com/setup_lts.x 2>&1 | log
 		chmod +x /tmp/node.sh 2>&1 | log
 
 		waitForTask "/tmp/node.sh" "Preparing to install Node.js..."
