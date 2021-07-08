@@ -1,106 +1,131 @@
 <?php
 
-namespace LinusU\Bitcoin;
+namespace Kielabokkie\Bitcoin;
 
-class AddressValidator {
+use Kielabokkie\Bitcoin\Base58;
+use Kielabokkie\Bitcoin\Bech32;
 
-    CONST MAINNET = "MAINNET";
-    CONST TESTNET = "TESTNET";
+class AddressValidator
+{
+    private $includeTestnet = false;
+    private $onlyTestnet = false;
 
-    CONST MAINNET_PUBKEY = "00";
-    CONST MAINNET_SCRIPT = "05";
-
-    CONST TESTNET_PUBKEY = "6F";
-    CONST TESTNET_SCRIPT = "C4";
-
-    static public function typeOf($addr) {
-
-        if (preg_match('/[^1-9A-HJ-NP-Za-km-z]/', $addr)) {
-            return false;
-        }
-
-        $decoded = self::decodeAddress($addr);
-
-        if (strlen($decoded) != 50) {
-            return false;
-        }
-
-        $version = substr($decoded, 0, 2);
-
-        $check = substr($decoded, 0, strlen($decoded) - 8);
-        $check = pack("H*", $check);
-        $check = hash("sha256", $check, true);
-        $check = hash("sha256", $check);
-        $check = strtoupper($check);
-        $check = substr($check, 0, 8);
-
-        $isValid = ($check == substr($decoded, strlen($decoded) - 8));
-
-        return ($isValid ? $version : false);
+    /**
+     * Allow both mainnet and testnet addresses.
+     *
+     * @return AddressValidator
+     */
+    public function includeTestnet()
+    {
+        $this->includeTestnet = true;
+        return $this;
     }
 
-    static public function isValid($addr, $version = null) {
-
-        $type = self::typeOf($addr);
-
-        if ($type === false) {
-            return false;
-        }
-
-        if (is_null($version)) {
-            $version = self::MAINNET;
-        }
-
-        switch ($version) {
-            case self::MAINNET:
-              $valids = [self::MAINNET_PUBKEY, self::MAINNET_SCRIPT];
-              break;
-            case self::TESTNET:
-              $valids = [self::TESTNET_PUBKEY, self::TESTNET_SCRIPT];
-              break;
-            case self::MAINNET_PUBKEY:
-            case self::MAINNET_SCRIPT:
-            case self::TESTNET_PUBKEY:
-            case self::TESTNET_SCRIPT:
-              $valids = [$version];
-              break;
-            default:
-              throw new Exception('Unknown version constant');
-        }
-
-        return in_array($type, $valids);
+    /**
+     * Allow only testnet addresses.
+     *
+     * @return AddressValidator
+     */
+    public function onlyTestnet()
+    {
+        $this->onlyTestnet = true;
+        return $this;
     }
 
-    static protected function decodeAddress($data) {
-
-        $charsetHex = '0123456789ABCDEF';
-        $charsetB58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
-
-        $raw = "0";
-        for ($i = 0; $i < strlen($data); $i++) {
-            $current = (string) strpos($charsetB58, $data[$i]);
-            $raw = (string) bcmul($raw, "58", 0);
-            $raw = (string) bcadd($raw, $current, 0);
+    /**
+     * Validates a given address.
+     *
+     * @param string $address
+     * @return boolean
+     */
+    public function isValid($address)
+    {
+        if (self::isPayToPublicKeyHash($address)) {
+            return true;
         }
 
-        $hex = "";
-        while (bccomp($raw, 0) == 1) {
-            $dv = (string) bcdiv($raw, "16", 0);
-            $rem = (integer) bcmod($raw, "16");
-            $raw = $dv;
-            $hex = $hex . $charsetHex[$rem];
+        if (self::isPayToScriptHash($address)) {
+            return true;
         }
 
-        $withPadding = strrev($hex);
-        for ($i = 0; $i < strlen($data) && $data[$i] == "1"; $i++) {
-            $withPadding = "00" . $withPadding;
+        if (self::isBech32($address)) {
+            return true;
         }
 
-        if (strlen($withPadding) % 2 != 0) {
-            $withPadding = "0" . $withPadding;
-        }
-
-        return $withPadding;
+        return false;
     }
 
+    /**
+     * Validates a P2PKH address.
+     *
+     * @param string $address
+     * @return boolean
+     */
+    public function isPayToPublicKeyHash($address)
+    {
+
+        $prefix = '1'; //$this->onlyTestnet ? 'nm' : ($this->includeTestnet ? '1nm' : '1');
+	
+        
+				$expr = sprintf('/^[%s][a-km-zA-HJ-NP-Z1-9]{25,34}$/', $prefix);
+
+        if (preg_match($expr, $address) === 1) {
+            try {
+                $base58 = new Base58;
+                return $base58->verify($address);
+
+            } catch (\Throwable $th) {
+                return false;
+            }
+        }
+    }
+
+    /**
+     * Validates a P2SH (segwit) address.
+     *
+     * @param string $address
+     * @return boolean
+     */
+    public function isPayToScriptHash($address)
+    {
+        $prefix = '3'; //$this->onlyTestnet ? '2' : ($this->includeTestnet ? '23' : '3');
+
+        $expr = sprintf('/^[%s][a-km-zA-HJ-NP-Z1-9]{25,34}$/', $prefix);
+
+        if (preg_match($expr, $address) === 1) {
+            try {
+                $base58 = new Base58;
+                return $base58->verify($address);
+            } catch (\Throwable $th) {
+                return false;
+            }
+        }
+    }
+
+    /**
+     * Validates a bech32 (native segwit) address.
+     *
+     * @param string $address
+     * @return boolean
+     */
+    public function isBech32($address)
+    {
+        $prefix = 'bc'; //$this->onlyTestnet ? 'tb' : ($this->includeTestnet ? 'bc|tb' : 'bc');
+        $expr = sprintf(
+            '/^((%s)(0([ac-hj-np-z02-9]{39}|[ac-hj-np-z02-9]{59})|1[ac-hj-np-z02-9]{8,87}))$/',
+            $prefix
+        );
+
+        if (preg_match($expr, $address, $match) === 1) {
+            try {
+                $bech32 = new Bech32;
+                $bech32->decodeSegwit($match[2], $match[0]);
+                return true;
+            } catch (\Throwable $th) {
+                return false;
+            }
+        }
+
+        return false;
+    }
 }

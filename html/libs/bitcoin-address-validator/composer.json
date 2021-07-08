@@ -1,24 +1,28 @@
 {
-  "name": "linusu/bitcoin-address-validator",
-  "type": "library",
-  "description": "A simple, easy to use PHP Bitcoin address validator",
-  "keywords": ["bitcoin", "address", "validation", "validator"],
-  "homepage": "http://github.com/LinusU/bitcoin-address-validator",
-  "license": "MIT",
-  "authors": [
-    {
-      "name": "Linus Unnebäck",
-      "email": "linus@folkdatorn.se",
-      "homepage": "http://linusu.se/",
-      "role": "Developer"
+    "name": "kielabokkie/bitcoin-address-validator",
+    "description": "Validate legacy, segwit and native segwit (bech32) Bitcoin addresses",
+    "type": "library",
+    "keywords": ["bitcoin", "address", "validation", "validator", "bech32", "segwit"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "kielabokkie",
+            "email": "kielabokkie@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^7.3|^8.0",
+        "ext-bcmath": "*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^7.5|^8.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Kielabokkie\\Bitcoin\\": "src/"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit"
     }
-  ],
-  "require": {
-    "php": ">=5.3.0"
-  },
-  "autoload": {
-    "psr-4": {
-      "LinusU\\Bitcoin\\": "src/"
-    }
-  }
 }
