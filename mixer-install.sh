@@ -238,7 +238,7 @@
 
 	SITE_SOURCE="${PKG_DIRECTORY}/html"
 	SITE_DIRECTORY="/var/www/html"
-	TOR_SITE_SERVERNAME_FILE="/var/lib/tor/hidden-services/hostname"
+	TOR_SITE_SERVERNAME_FILE="/var/lib/tor/v3/hidden-services/hostname"
 
 # Install Tor
 
@@ -246,20 +246,25 @@
 
 	if test `cat /etc/apt/sources.list|grep torproject|wc -l` -eq 0 ; then
 		log "Adding Tor Project repositories."
-	    echo "deb https://deb.torproject.org/torproject.org stretch main" >> /etc/apt/sources.list
-	    echo "deb-src https://deb.torproject.org/torproject.org stretch main" >> /etc/apt/sources.list
+	  echo "deb https://deb.torproject.org/torproject.org stretch main" >> /etc/apt/sources.list
+	  echo "deb-src https://deb.torproject.org/torproject.org stretch main" >> /etc/apt/sources.list
 	fi
 
 	if test `which tor|wc -l` -eq 0 ; then
 		log "Adding PGP key..."
-        gpg --keyserver keys.gnupg.net --recv A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89 2>&1 | log
-        gpg --export A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89 | apt-key add - 2>&1 | log
+		curl -s https://deb.torproject.org/torproject.org/A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89.asc | gpg --import 2>&1 | log
+		gpg --export A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89 | apt-key add - 2>&1 | log
+		
+    		##gpg --keyserver keys.gnupg.net --recv A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89 2>&1 | log
+    		##gpg --export A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89 | apt-key add - 2>&1 | log
 
-        waitForTask "apt -y --allow-unauthenticated install tor" \
+    		waitForTask "apt update" "Updating Tor packages..."
+
+    		waitForTask "apt -y --allow-unauthenticated install tor" \
         			"Installing Tor..."
-	else
+    	else
 		printAndLog "Tor is already installed."
-    fi
+   	fi
 
 # Make sure Tor was installed successfully before continuing
 
@@ -267,20 +272,19 @@
     	echo
     	echo "ERROR: Tor not installed!"
     	echo "You may be able to find more details in ${LOG_FILE}"
-        echo "You can try installing Tor maually and then running this script again."
-        echo "Use the command: apt -y install tor"
-        echo
-        exit 1
+      echo "You can try installing Tor maually and then running this script again."
+      echo "Use the command: apt -y install tor"
+      echo
+      exit 1
     fi
 
 # Create Tpr hidden services directory
 
-    #mkdir -p /var/lib/tor/hidden-services
-    mkdir -p /var/lib/tor/
-	chown -R debian-tor:debian-tor /var/lib/tor
+    mkdir -p /var/lib/tor/v3/
+    chown -R debian-tor:debian-tor /var/lib/tor/v3/
 
     if test `cat /etc/tor/torrc|grep "^HiddenServicePort 80 127.0.0.1:8080"|wc -l` -eq 0 ; then
-        echo "HiddenServiceDir /var/lib/tor/hidden-services" >> /etc/tor/torrc
+        echo "HiddenServiceDir /var/lib/tor/v3/hidden-services" >> /etc/tor/torrc
         echo "HiddenServicePort 80 127.0.0.1:8080" >> /etc/tor/torrc
     fi
 
@@ -307,12 +311,6 @@
 	fi
 
 	if test `which nginx|wc -l` -eq 0 ; then
-
-		# We've seen some hosters include Apache in their VPS templates out of the box.
-		# If Apache is there, it will not let nginx get installed, so attempt to delete it.
-		waitForTask "apt -y remove apache2" \
-					"Checking and removing Apache..."
-
 		waitForTask "apt -y --allow-unauthenticated install nginx" \
 					"Installing Nginx..."
 	else
@@ -424,8 +422,8 @@ printAndLog "Configuring PHP and Nginx..."
 echo "server {
     listen 8080;
     server_name ${TOR_SITE_SERVERNAME};
-    access_log  /var/log/nginx/tor-access-site.log;
-    error_log   /var/log/nginx/tor-error-site.log;
+    access_log  /var/log/nginx/tor-v3-access-site.log;
+    error_log   /var/log/nginx/tor-v3-error-site.log;
 
     root  ${SITE_DIRECTORY};
     index index.php index.html;
