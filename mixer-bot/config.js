@@ -15,7 +15,7 @@ const MAX_DDOS_HITS = 2;
 
 const FAQ_PAGE =
 `<strong>Q:</strong> What is the minimum and maximum amount you accept for cleansing?
-<strong>A:</strong> From 0.001 up to 50 BTC.
+<strong>A:</strong> From 0.003 up to 50 BTC.
 
 <strong>Q:</strong> How many confirmations do you require on my incoming transfer?
 <strong>A:</strong> We start processing your order after the first confirmation.
