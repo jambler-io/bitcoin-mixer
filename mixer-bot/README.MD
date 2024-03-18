@@ -6,7 +6,7 @@
 
 ## Requirements
 
-* Node 8.11.3 or later
+* Node 18 or later
 * Git
 * pm2 package (optional)
 
