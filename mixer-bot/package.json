@@ -4,8 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js > error.log",
-    "with_logs": "node index.js > error.log"
+    "start": "node index.js > error.log"
   },
   "repository": {
     "type": "git",
@@ -17,11 +16,11 @@
   "dependencies": {
     "is-json": "^2.0.1",
     "node-cache": "^4.2.0",
-    "node-telegram-bot-api": "^0.30.0",
+    "node-telegram-bot-api": "^0.65.1",
     "qr-image": "^3.2.0",
-    "qrcode": "^1.2.0",
-    "request": "^2.87.0",
-    "request-promise": "^4.2.2",
+    "qrcode": "^1.5.3",
+    "request": "^2.88.2",
+    "request-promise": "^4.2.6",
     "wallet-address-validator": "^0.2.4"
   }
 }
