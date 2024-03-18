@@ -5,12 +5,6 @@
 
 This repo has everything you will need to set up your own partner mixing service powered by Jambler. This includes the website template, the telegram bot and the rapid deployment script.
 
-#### Website Template
-
-The website template implements the functionality of a mixer and has Jambler API integration already built into it, so you can get your own partner mixer running in no time. It has a unified code base and can work with or without Javascript, so the same website can be served on both Tor and clearnet.
-
-We have [instructions](https://jambler.io/howto.php#hosting-deployment) for deploying this template on a shared web hosting (using the free [000webhost](https://www.000webhost.com/) as an example).
-
 #### Telegram Bot
 
 We have sources of a telegram bot capable of accepting cleansing orders from your customers and working with Jambler API to process them. Like the website, it needs to be running on your server to be available for interaction.
