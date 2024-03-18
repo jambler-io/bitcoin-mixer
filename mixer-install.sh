@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Jambler.io partner mixer installation script v1.3.0
-# Applied to a clean Debian 10 VPS.
+# Jambler.io partner mixer installation script v1.5.0
+# Applied to a clean VPS with Debian 10 or later.
 #
 #  The script:
 #   - downloads and configures required packages
@@ -206,6 +206,12 @@
 	printAndLog "depending on disk speed and internet connection."
 	printAndLog "-----------------------------------------------------"
 	printAndLog " "
+	
+# Disable IPv6
+	echo "net.ipv6.conf.all.disable_ipv6 = 1" >> /etc/sysctl.conf
+	echo "net.ipv6.conf.default.disable_ipv6 = 1" >> /etc/sysctl.conf
+	
+	waitForTask "sysctl -p" "Apply changes for IPv6..."
 
 # Update package list
 
@@ -243,28 +249,25 @@
 # Install Tor
 
 	printAndLog "Preparing to install Tor..."
+	
+	waitForTask "apt install -y gpg apt-transport-https software-properties-common" "Install Tor required packages..."
+	
+	waitForTask "apt-add-repository -s https://deb.torproject.org/torproject.org" "Add tor repository"
 
-	if test `cat /etc/apt/sources.list|grep torproject|wc -l` -eq 0 ; then
-		log "Adding Tor Project repositories."
-	  echo "deb https://deb.torproject.org/torproject.org stretch main" >> /etc/apt/sources.list
-	  echo "deb-src https://deb.torproject.org/torproject.org stretch main" >> /etc/apt/sources.list
-	fi
 
 	if test `which tor|wc -l` -eq 0 ; then
 		log "Adding PGP key..."
 		curl -s https://deb.torproject.org/torproject.org/A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89.asc | gpg --import 2>&1 | log
-		gpg --export A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89 | apt-key add - 2>&1 | log
-		
-    		##gpg --keyserver keys.gnupg.net --recv A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89 2>&1 | log
-    		##gpg --export A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89 | apt-key add - 2>&1 | log
+		gpg --export A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89 | apt-key add - 2>&1 | log		
 
-    		waitForTask "apt update" "Updating Tor packages..."
 
-    		waitForTask "apt -y --allow-unauthenticated install tor" \
+    waitForTask "apt update" "Updating Tor packages..."
+
+    waitForTask "apt -y --allow-unauthenticated install tor" \
         			"Installing Tor..."
-    	else
+  else
 		printAndLog "Tor is already installed."
-   	fi
+  fi
 
 # Make sure Tor was installed successfully before continuing
 
@@ -291,8 +294,8 @@
 # Start Tor
 
 	printAndLog "Starting Tor..."
-	service tor stop 2>&1 | log
-	service tor start 2>&1 | log
+	/usr/sbin/service tor stop 2>&1 | log
+	/usr/sbin/service tor start 2>&1 | log
 
 # General variables for the clearnet website
 
@@ -304,11 +307,17 @@
 
 # Install Nginx
 
+	waitForTask "wget https://nginx.org/keys/nginx_signing.key" "Download nginx key"
+	waitForTask "apt-key add nginx_signing.key" "Adding nginx key"
+	
+
 	if test `cat /etc/apt/sources.list|grep nginx|wc -l` -eq 0 ; then
 		printAndLog "Adding repositories for Nginx."
 		echo "deb http://nginx.org/packages/debian/ stretch nginx" >> /etc/apt/sources.list
 		echo "deb-src http://nginx.org/packages/debian/ stretch nginx" >> /etc/apt/sources.list
 	fi
+	
+	waitForTask "apt update" "Update repositories"
 
 	if test `which nginx|wc -l` -eq 0 ; then
 		waitForTask "apt -y --allow-unauthenticated install nginx" \
@@ -332,15 +341,14 @@
 
 	if test `which nodejs | wc -l` -eq 0 ; then
 
-		wget -qO /tmp/node.sh https://deb.nodesource.com/setup_lts.x 2>&1 | log
+		wget -qO /tmp/node.sh https://deb.nodesource.com/setup_20.x 2>&1 | log
 		chmod +x /tmp/node.sh 2>&1 | log
 
 		waitForTask "/tmp/node.sh" "Preparing to install Node.js..."
 
 		rm -f /tmp/node.sh 2>&1 | log
 
-		waitForTask "apt install -y nodejs" \
-	    			"Installing Node.js..."
+		waitForTask "apt install -y nodejs" "Installing Node.js..."
 	else
 		printAndLog "Node.js is already installed."
 	fi
@@ -349,8 +357,7 @@
 
 	if test `which npm | wc -l` -eq 0 ; then
 
-		waitForTask "apt install -y npm" \
-	    			"Installing npm..."
+		waitForTask "apt install -y npm" "Installing npm..."
 	else
 		printAndLog "npm is already installed."
 	fi
@@ -392,8 +399,8 @@ printAndLog "Configuring PHP and Nginx..."
 		TOR_SITE_SERVERNAME=`cat ${TOR_SITE_SERVERNAME_FILE}`
 	else
 		printAndLog "Tor hostname file not found! Attempting to restart Tor."
-		service tor stop 2>&1 | log
-		service tor start 2>&1 | log
+		/usr/sbin/service tor stop 2>&1 | log
+		/usr/sbin/service tor start 2>&1 | log
 		sleep 5
 	fi
 
@@ -518,7 +525,7 @@ stderr_logfile=/var/log/telegram-bot.log" > /etc/supervisor/conf.d/jambler_tbot.
 	
 	printAndLog "Enabling and starting all the services..."
 
-	service supervisor start
+	/usr/sbin/service supervisor start
 
 	systemctl enable fail2ban 2>&1 | log
 	systemctl enable php${PHP_VER}-fpm 2>&1 | log
