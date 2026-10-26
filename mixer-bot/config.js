@@ -32,7 +32,6 @@ const FAQ_PAGE =
 const CONTACT_US_PAGE =
 `<strong>Clearnet:</strong> https://jambler.io
 <strong>Tor:</strong> jambler2zgfnjykq.onion
-<strong>Email:</strong> support@jambler.io
 <strong>Reddit:</strong> reddit.com/user/Jambler_io
 <strong>Bitcoin Talk:</strong> bitcointalk.org/index.php?topic=4667343`;
 
