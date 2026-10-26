@@ -501,17 +501,7 @@ $description = $descriptions[$p];
 						</a>
 						<a class="ml-3 d-none d-sm-inline" href="http://t.me/jambler" target="_blank">t.me/jambler</a>
 					</div>
-
-					<div class="d-flex flex-wrap align-items-center mt-4 justify-content-center justify-content-sm-start">
-						<a href="mailto:support@jambler.io" class="rounded-with-icon d-flex flex-wrap mb-1">
-							<div class="inner-icon d-flex justify-content-center align-items-center">
-								<svg class="icon"><use xlink:href="#icon-email"></use></svg>
-							</div>
-							<div class="d-flex align-items-center ml-3">E-mail</div>
-						</a>
-						<a class="ml-3 d-none d-sm-inline" href="mailto:support@jambler.io">support@jambler.io</a>
-					</div>
-
+					
 					<div class="d-flex flex-wrap align-items-center mt-4 justify-content-center justify-content-sm-start">
 						<a href="https://jambler.io/pgp-key.txt" download class="rounded-with-icon d-flex flex-wrap mb-1">
 							<div class="inner-icon d-flex justify-content-center align-items-center">
@@ -697,9 +687,6 @@ $description = $descriptions[$p];
 					Powered by <a href="http://jambler.io" target="_blank">Jambler.io</a>
 				</div>
 				<div class="icons mt-5 text-center text-md-left">
-					<a href="mailto:support@jambler.io" class="mr-3">
-						<svg class="icon"><use xlink:href="#icon-email"></use></svg>
-					</a>
 					<a href="http://t.me/jambler" target="_blank" class="mr-3">
 						<svg class="icon"><use xlink:href="#icon-telegram"></use></svg>
 					</a>
